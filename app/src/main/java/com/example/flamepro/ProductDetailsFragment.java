@@ -106,6 +106,7 @@ public class ProductDetailsFragment extends Fragment {
         tvStockStatus.setVisibility(View.VISIBLE);
 
         setupFeaturesList(view);
+        setupVariants(view, tvCurrentPrice, tvWeight);
 
         ivBack.setOnClickListener(v -> {
             if (getParentFragmentManager() != null) {
@@ -123,6 +124,76 @@ public class ProductDetailsFragment extends Fragment {
         });
     }
 
+    private void setupVariants(View view, TextView tvCurrentPrice, TextView tvWeight) {
+        TextView tvVariantsLabel = view.findViewById(R.id.tvVariantsLabel);
+        View hsvVariants = view.findViewById(R.id.hsvVariants);
+        LinearLayout llVariantsContainer = view.findViewById(R.id.llVariantsContainer);
+
+        if (product.getVariantWeights() != null && !product.getVariantWeights().isEmpty() 
+            && product.getVariantPrices() != null && product.getVariantPrices().size() == product.getVariantWeights().size()) {
+            
+            tvVariantsLabel.setVisibility(View.VISIBLE);
+            hsvVariants.setVisibility(View.VISIBLE);
+            llVariantsContainer.removeAllViews();
+
+            for (int i = 0; i < product.getVariantWeights().size(); i++) {
+                String variantWeight = product.getVariantWeights().get(i);
+                String variantPrice = product.getVariantPrices().get(i);
+                
+                TextView chip = new TextView(getContext());
+                chip.setText(variantWeight);
+                chip.setTextColor(getResources().getColor(R.color.black));
+                chip.setBackgroundResource(R.drawable.badge_bg);
+                chip.setPadding(32, 16, 32, 16);
+                chip.setTextSize(14f);
+                chip.setPaintFlags(chip.getPaintFlags() | android.graphics.Paint.FAKE_BOLD_TEXT_FLAG);
+
+                LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+                params.setMargins(0, 0, 16, 0);
+                chip.setLayoutParams(params);
+
+                int finalI = i;
+                chip.setOnClickListener(v -> {
+                    // Update Product in-memory so Add to Cart / Buy Now gets it
+                    product.setWeight(variantWeight);
+                    product.setPrice(variantPrice);
+                    
+                    // Update UI
+                    tvCurrentPrice.setText(variantPrice);
+                    tvWeight.setText(variantWeight);
+                    
+                    // Highlight selected, un-highlight others
+                    for (int j = 0; j < llVariantsContainer.getChildCount(); j++) {
+                        TextView child = (TextView) llVariantsContainer.getChildAt(j);
+                        if (j == finalI) {
+                            child.setBackgroundTintList(android.content.res.ColorStateList.valueOf(getResources().getColor(R.color.brand_red)));
+                            child.setTextColor(getResources().getColor(R.color.white));
+                        } else {
+                            child.setBackgroundTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#F5F5F5")));
+                            child.setTextColor(getResources().getColor(R.color.black));
+                        }
+                    }
+                });
+
+                // Default state for first item
+                if (i == 0) {
+                    chip.setBackgroundTintList(android.content.res.ColorStateList.valueOf(getResources().getColor(R.color.brand_red)));
+                    chip.setTextColor(getResources().getColor(R.color.white));
+                    
+                    product.setWeight(variantWeight);
+                    product.setPrice(variantPrice);
+                    tvCurrentPrice.setText(variantPrice);
+                    tvWeight.setText(variantWeight);
+                } else {
+                    chip.setBackgroundTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#F5F5F5")));
+                }
+
+                llVariantsContainer.addView(chip);
+            }
+        }
+    }
+
     private void setupFeaturesList(View view) {
         LinearLayout llFeaturesList = view.findViewById(R.id.llFeaturesList);
         llFeaturesList.removeAllViews();
@@ -133,6 +204,22 @@ public class ProductDetailsFragment extends Fragment {
                 TextView tvFeature = featureView.findViewById(R.id.tvFeatureText);
                 tvFeature.setText(feature);
                 llFeaturesList.addView(featureView);
+            }
+        }
+        
+        setupUsageGuidelines(view);
+    }
+
+    private void setupUsageGuidelines(View view) {
+        View cvUsageGuidelines = view.findViewById(R.id.cvUsageGuidelines);
+        TextView tvUsageGuidelines = view.findViewById(R.id.tvUsageGuidelines);
+
+        if (cvUsageGuidelines != null && tvUsageGuidelines != null) {
+            if (product.getUsageGuidelines() != null && !product.getUsageGuidelines().trim().isEmpty()) {
+                cvUsageGuidelines.setVisibility(View.VISIBLE);
+                tvUsageGuidelines.setText(product.getUsageGuidelines());
+            } else {
+                cvUsageGuidelines.setVisibility(View.GONE);
             }
         }
     }
@@ -159,7 +246,7 @@ public class ProductDetailsFragment extends Fragment {
         ViewPager2 vpCarousel = view.findViewById(R.id.vpProductImage);
         TabLayout tlDots = view.findViewById(R.id.tlDots);
 
-        ImageCarouselAdapter adapter = new ImageCarouselAdapter(product.getCarouselImages());
+        ImageCarouselAdapter adapter = new ImageCarouselAdapter(product.getCarouselImages(), product.getImageUrl());
         vpCarousel.setAdapter(adapter);
 
         new TabLayoutMediator(tlDots, vpCarousel, (tab, position) -> {}).attach();

@@ -211,6 +211,15 @@
                         app:layout_constraintStart_toStartOf="@id/tvProductName"
                         app:layout_constraintTop_toBottomOf="@id/tvProductName" />
 
+                    <Spinner
+                        android:id="@+id/spnVariants"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:visibility="gone"
+                        app:layout_constraintStart_toStartOf="@id/tvProductName"
+                        app:layout_constraintTop_toBottomOf="@id/tvVariant" />
+
                     <LinearLayout
                         android:id="@+id/llQty"
                         android:layout_width="wrap_content"
@@ -221,7 +230,7 @@
                         android:orientation="horizontal"
                         android:paddingHorizontal="4dp"
                         app:layout_constraintStart_toStartOf="@id/tvVariant"
-                        app:layout_constraintTop_toBottomOf="@id/tvVariant">
+                        app:layout_constraintTop_toBottomOf="@id/spnVariants">
 
                         <ImageView
                             android:id="@+id/btnMinus"
@@ -327,22 +336,24 @@
                             app:layout_constraintTop_toTopOf="parent" />
 
                         <TextView
+                            android:id="@+id/tvDeliveryLabel"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="8dp"
-                            android:text="Delivery Fee"
+                            android:text="Delivery Area"
                             android:textColor="@color/text_gray"
                             app:layout_constraintStart_toStartOf="parent"
                             app:layout_constraintTop_toBottomOf="@id/tvSubtotalLabel" />
 
-                        <TextView
-                            android:layout_width="wrap_content"
+                        <Spinner
+                            android:id="@+id/spnDeliveryArea"
+                            android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
-                            android:text="₱ 9.99"
-                            android:textColor="@color/black"
-                            android:textStyle="bold"
+                            android:layout_marginStart="8dp"
+                            android:layout_marginTop="4dp"
+                            android:textAlignment="viewEnd"
                             app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintStart_toEndOf="@id/tvDeliveryLabel"
                             app:layout_constraintTop_toBottomOf="@id/tvSubtotalValue" />
                     </androidx.constraintlayout.widget.ConstraintLayout>
 

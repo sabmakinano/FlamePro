@@ -99,17 +99,72 @@ public class LoginActivity extends AppCompatActivity {
             }
         }
 
-        // 3. Simulated Login Success
-        // Now any valid Gmail (like glen@gmail.com) will work for your testing
-        Toast.makeText(this, "Login Successful", Toast.LENGTH_SHORT).show();
-        
-        // Record the login info to central UserManager for Profile display
-        UserManager.getInstance().setEmailOrUsername(input);
-        
-        Intent intent = new Intent(LoginActivity.this, MainActivity.class);
-        intent.putExtra("USER_NAME", input);
-        startActivity(intent);
-        overridePendingTransition(R.anim.fade_in, R.anim.fade_out);
-        finish();
+        // 3. Call Backend API
+        btnLogin.setEnabled(false);
+        btnLogin.setText("Signing in...");
+
+        com.example.flamepro.network.models.LoginRequest request = 
+                new com.example.flamepro.network.models.LoginRequest(input, password);
+
+        com.example.flamepro.network.ApiClient.getApiService().login(request)
+                .enqueue(new retrofit2.Callback<com.example.flamepro.network.models.AuthResponse>() {
+                    @Override
+                    public void onResponse(retrofit2.Call<com.example.flamepro.network.models.AuthResponse> call, 
+                                           retrofit2.Response<com.example.flamepro.network.models.AuthResponse> response) {
+                        btnLogin.setEnabled(true);
+                        btnLogin.setText("Log In");
+
+                        if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
+                            Toast.makeText(LoginActivity.this, "Login Successful", Toast.LENGTH_SHORT).show();
+                            
+                            // Save logged-in user profile to UserManager
+                            if (response.body().getUser() != null) {
+                                UserManager.getInstance().updateFromUser(response.body().getUser());
+                            } else {
+                                UserManager.getInstance().setEmailOrUsername(input);
+                            }
+
+                            Intent intent;
+                            String role = UserManager.getInstance().getRole();
+
+                            // Clear previous user's local data before routing
+                            OrderManager.getInstance().clearOrders();
+                            CartManager.getInstance().clearCart();
+
+                            if ("delivery".equalsIgnoreCase(role)) {
+                                intent = new Intent(LoginActivity.this, DeliveryMainActivity.class);
+                            } else if ("technician".equalsIgnoreCase(role)) {
+                                intent = new Intent(LoginActivity.this, TechnicianMainActivity.class);
+                            } else {
+                                intent = new Intent(LoginActivity.this, MainActivity.class);
+                                intent.putExtra("USER_NAME", UserManager.getInstance().getFullName().trim().isEmpty() 
+                                        ? input : UserManager.getInstance().getFullName());
+                            }
+
+                            startActivity(intent);
+                            overridePendingTransition(R.anim.fade_in, R.anim.fade_out);
+                            finish();
+                        } else {
+                            String errorMsg = "Invalid credentials";
+                            if (response.errorBody() != null) {
+                                try {
+                                    errorMsg = response.errorBody().string();
+                                } catch (Exception ignored) {}
+                            } else if (response.body() != null && response.body().getMessage() != null) {
+                                errorMsg = response.body().getMessage();
+                            }
+                            Toast.makeText(LoginActivity.this, errorMsg, Toast.LENGTH_LONG).show();
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(retrofit2.Call<com.example.flamepro.network.models.AuthResponse> call, Throwable t) {
+                        btnLogin.setEnabled(true);
+                        btnLogin.setText("Log In");
+                        Toast.makeText(LoginActivity.this, 
+                                "Connection failed: " + t.getMessage() + "\n(Check XAMPP & Server URL in ApiClient)", 
+                                Toast.LENGTH_LONG).show();
+                    }
+                });
     }
 }

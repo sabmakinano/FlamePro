@@ -59,7 +59,7 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.ViewHolder> {
         }
 
         holder.tvQuantity.setText(String.valueOf(item.getQuantity()));
-        holder.ivProduct.setImageResource(product.getImageResource());
+        ImageLoader.load(holder.ivProduct, product.getImageUrl(), product.getImageResource());
 
         // Checkbox logic
         holder.cbItem.setImageResource(item.isSelected() ? R.drawable.custom_checked_circle : R.drawable.custom_unchecked_circle);

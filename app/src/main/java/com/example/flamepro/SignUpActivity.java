@@ -110,16 +110,59 @@ public class SignUpActivity extends AppCompatActivity {
             return;
         }
 
-        // Simulated Success
-        Toast.makeText(this, "Account Created Successfully", Toast.LENGTH_SHORT).show();
-        
-        // Save the registered email/username to central state
-        UserManager.getInstance().setEmailOrUsername(input);
-        
-        Intent intent = new Intent(SignUpActivity.this, SetupProfileActivity.class);
-        startActivity(intent);
-        overridePendingTransition(R.anim.fade_in, R.anim.fade_out);
-        finish();
+        // Call Backend API
+        btnCreateAccount.setEnabled(false);
+        btnCreateAccount.setText("Creating Account...");
+
+        String email = input.contains("@") ? input : null;
+        String username = input.contains("@") ? input.substring(0, input.indexOf('@')) : input;
+
+        com.example.flamepro.network.models.RegisterRequest request = 
+                new com.example.flamepro.network.models.RegisterRequest(email, username, password, "", "", "");
+
+        com.example.flamepro.network.ApiClient.getApiService().register(request)
+                .enqueue(new retrofit2.Callback<com.example.flamepro.network.models.AuthResponse>() {
+                    @Override
+                    public void onResponse(retrofit2.Call<com.example.flamepro.network.models.AuthResponse> call, 
+                                           retrofit2.Response<com.example.flamepro.network.models.AuthResponse> response) {
+                        btnCreateAccount.setEnabled(true);
+                        btnCreateAccount.setText("Create Account");
+
+                        if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
+                            Toast.makeText(SignUpActivity.this, "Account Created Successfully", Toast.LENGTH_SHORT).show();
+
+                            if (response.body().getUser() != null) {
+                                UserManager.getInstance().updateFromUser(response.body().getUser());
+                            } else {
+                                UserManager.getInstance().setEmailOrUsername(input);
+                            }
+
+                            Intent intent = new Intent(SignUpActivity.this, SetupProfileActivity.class);
+                            startActivity(intent);
+                            overridePendingTransition(R.anim.fade_in, R.anim.fade_out);
+                            finish();
+                        } else {
+                            String errorMsg = "Sign up failed";
+                            if (response.errorBody() != null) {
+                                try {
+                                    errorMsg = response.errorBody().string();
+                                } catch (Exception ignored) {}
+                            } else if (response.body() != null && response.body().getMessage() != null) {
+                                errorMsg = response.body().getMessage();
+                            }
+                            Toast.makeText(SignUpActivity.this, errorMsg, Toast.LENGTH_LONG).show();
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(retrofit2.Call<com.example.flamepro.network.models.AuthResponse> call, Throwable t) {
+                        btnCreateAccount.setEnabled(true);
+                        btnCreateAccount.setText("Create Account");
+                        Toast.makeText(SignUpActivity.this, 
+                                "Connection failed: " + t.getMessage() + "\n(Check XAMPP & Server URL in ApiClient)", 
+                                Toast.LENGTH_LONG).show();
+                    }
+                });
     }
 
     @Override

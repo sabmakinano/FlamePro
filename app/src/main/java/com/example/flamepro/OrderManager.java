@@ -47,6 +47,10 @@ public class OrderManager {
         }
     }
 
+    public void clearOrders() {
+        orders.clear();
+    }
+
     public void addOrder(Order order) {
         // Add to the beginning so newest order is at the top
         orders.add(0, order);

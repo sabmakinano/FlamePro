@@ -67,7 +67,7 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ViewHold
         holder.tvName.setText(product.getName());
         holder.tvPrice.setText(product.getPrice());
         holder.tvReviews.setText("(" + product.getReviews() + ")");
-        holder.ivImage.setImageResource(product.getImageResource());
+        ImageLoader.load(holder.ivImage, product.getImageUrl(), product.getImageResource());
 
         holder.ivImage.setOnClickListener(v -> {
             if (productClickListener != null) {

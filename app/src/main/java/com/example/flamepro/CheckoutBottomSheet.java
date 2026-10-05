@@ -23,11 +23,18 @@ import java.util.Locale;
 import java.util.Random;
 import java.util.TimeZone;
 
+import com.example.flamepro.network.ApiClient;
+import com.example.flamepro.network.models.OrderRequest;
+import com.example.flamepro.network.models.OrderResponse;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+
 public class CheckoutBottomSheet extends BottomSheetDialogFragment {
 
     private Product product;
     private int quantity = 1;
-    private double deliveryFee = 9.99;
+    private double deliveryFee = 100.0;
 
     public static CheckoutBottomSheet newInstance(Product product) {
         CheckoutBottomSheet fragment = new CheckoutBottomSheet();
@@ -88,11 +95,64 @@ public class CheckoutBottomSheet extends BottomSheetDialogFragment {
         TextView tvTotal = view.findViewById(R.id.tvTotalValue);
         TextView tvItemCount = view.findViewById(R.id.tvItemCount);
         MaterialButton btnPlaceOrder = view.findViewById(R.id.btnPlaceOrder);
+        android.widget.Spinner spnVariants = view.findViewById(R.id.spnVariants);
+
+        android.widget.Spinner spnDeliveryArea = view.findViewById(R.id.spnDeliveryArea);
+        String[] deliveryZones = {
+                "Zone 1: Metro Cebu (₱100)",
+                "Zone 2: Greater Cebu (₱150)",
+                "Zone 3: Provincial Cebu (₱200)"
+        };
+        android.widget.ArrayAdapter<String> deliveryAdapter = new android.widget.ArrayAdapter<>(
+                requireContext(), android.R.layout.simple_spinner_item, deliveryZones);
+        deliveryAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spnDeliveryArea.setAdapter(deliveryAdapter);
+        
+        spnDeliveryArea.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(android.widget.AdapterView<?> parent, View v, int position, long id) {
+                if (position == 0) deliveryFee = 100.0;
+                else if (position == 1) deliveryFee = 150.0;
+                else if (position == 2) deliveryFee = 200.0;
+                
+                updatePriceUI(tvQty, tvPrice, tvSubtotal, tvTotal, btnPlaceOrder, tvItemCount);
+            }
+            @Override
+            public void onNothingSelected(android.widget.AdapterView<?> parent) {}
+        });
 
         if (product != null) {
-            ivProduct.setImageResource(product.getImageResource());
+            ImageLoader.load(ivProduct, product.getImageUrl(), product.getImageResource());
             tvProductName.setText(product.getName());
             tvVariant.setText(product.getWeight() + " • " + product.getType());
+            
+            if (product.getVariantWeights() != null && !product.getVariantWeights().isEmpty()) {
+                spnVariants.setVisibility(View.VISIBLE);
+                tvVariant.setVisibility(View.GONE); // Hide static text if spinner is used
+                android.widget.ArrayAdapter<String> adapter = new android.widget.ArrayAdapter<>(
+                        requireContext(), android.R.layout.simple_spinner_item, product.getVariantWeights());
+                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                spnVariants.setAdapter(adapter);
+                
+                // Set initial selection based on product weight
+                int selectedPosition = product.getVariantWeights().indexOf(product.getWeight());
+                if(selectedPosition >= 0) spnVariants.setSelection(selectedPosition);
+
+                spnVariants.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
+                    @Override
+                    public void onItemSelected(android.widget.AdapterView<?> parent, View v, int position, long id) {
+                        product.setWeight(product.getVariantWeights().get(position));
+                        product.setPrice(product.getVariantPrices().get(position));
+                        updatePriceUI(tvQty, tvPrice, tvSubtotal, tvTotal, btnPlaceOrder, tvItemCount);
+                    }
+                    @Override
+                    public void onNothingSelected(android.widget.AdapterView<?> parent) {}
+                });
+            } else {
+                spnVariants.setVisibility(View.GONE);
+                tvVariant.setVisibility(View.VISIBLE);
+            }
+            
             updatePriceUI(tvQty, tvPrice, tvSubtotal, tvTotal, btnPlaceOrder, tvItemCount);
         }
 
@@ -125,6 +185,27 @@ public class CheckoutBottomSheet extends BottomSheetDialogFragment {
                 String orderId = "ORD - " + (4000 + new Random().nextInt(5000));
                 Order newOrder = new Order(orderId, orderedItems, orderDateStr, estDelivery, totalStr, Order.OrderStatus.PENDING);
                 OrderManager.getInstance().addOrder(newOrder);
+
+                // Call Backend API to persist order
+                int userId = UserManager.getInstance().getUserId();
+                String address = UserManager.getInstance().getAddress();
+                if (address == null || address.trim().isEmpty()) {
+                    address = "Customer Address";
+                }
+                String customerName = UserManager.getInstance().getFullName();
+                if (customerName == null || customerName.trim().isEmpty()) {
+                    customerName = "Guest";
+                }
+                List<OrderRequest.OrderItemRequest> apiItems = new ArrayList<>();
+                apiItems.add(new OrderRequest.OrderItemRequest(null, product.getName(), quantity, product.getPrice()));
+
+                OrderRequest orderReq = new OrderRequest(userId > 0 ? userId : null, totalStr, "Cash on Delivery", address, customerName, apiItems);
+                ApiClient.getApiService().createOrder(orderReq).enqueue(new Callback<OrderResponse>() {
+                    @Override
+                    public void onResponse(Call<OrderResponse> call, Response<OrderResponse> response) {}
+                    @Override
+                    public void onFailure(Call<OrderResponse> call, Throwable t) {}
+                });
             }
 
             if (getActivity() instanceof MainActivity) {

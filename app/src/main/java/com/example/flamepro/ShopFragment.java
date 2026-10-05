@@ -121,6 +121,11 @@ public class ShopFragment extends Fragment {
         features.add("1-Year Warranty");
 
         // Adding 20 different products
+        Product hfc = new Product("HFC236FA GREEN FIRE EXTINGUISHER", "₱ 1500.00", "₱ 1800.00", "15% OFF", 4.9f, 42, R.drawable.logo, carousel, "1kg", "HFC236FA", "10-15 ft", features, "Fire Extinguishers", true);
+        hfc.setVariantWeights(java.util.Arrays.asList("1kg", "2.5kg", "5kg", "9kg", "25kg"));
+        hfc.setVariantPrices(java.util.Arrays.asList("₱ 1500.00", "₱ 2800.00", "₱ 4500.00", "₱ 7500.00", "₱ 18000.00"));
+        allProductsList.add(hfc);
+        
         allProductsList.add(new Product("ABC Dry Powder 5 lb", "₱ 45.00", "₱ 55.00", "18% OFF", 4.8f, 24, R.drawable.logo, carousel, "5 lb", "Dry Powder", "10-15 ft", features, "Fire Extinguishers", true));
         allProductsList.add(new Product("CO2 Extinguisher 10 lb", "₱ 89.99", "₱ 110.00", "18% OFF", 4.7f, 15, R.drawable.logo, carousel, "10 lb", "CO2", "8-12 ft", features, "Fire Extinguishers", true));
         allProductsList.add(new Product("Foam Extinguisher 9 L", "₱ 59.50", "₱ 75.00", "20% OFF", 4.5f, 10, R.drawable.logo, carousel, "9L", "Foam", "12-18 ft", features, "Fire Extinguishers", true));
@@ -143,17 +148,47 @@ public class ShopFragment extends Fragment {
         allProductsList.add(new Product("Gas Mask (Single Filter)", "₱ 95.00", "₱ 120.00", "20% OFF", 4.8f, 11, R.drawable.logo, carousel, "2 lb", "Air Purifying", "Head", features, "Fireman Equipments", true));
 
         adapter = new ProductAdapter(new ArrayList<>(allProductsList), product -> {
-            CartManager.getInstance().addProduct(product, 1);
+            CartManager.getInstance().addProduct(product.copy(), 1);
             performCartAnimation(rootView.findViewById(R.id.flCartAnim));
         }, product -> {
-            CheckoutBottomSheet.newInstance(product).show(getParentFragmentManager(), "checkout");
+            CheckoutBottomSheet.newInstance(product.copy()).show(getParentFragmentManager(), "checkout");
         }, product -> {
             getParentFragmentManager().beginTransaction()
-                    .replace(R.id.nav_host_fragment, ProductDetailsFragment.newInstance(product))
+                    .replace(R.id.nav_host_fragment, ProductDetailsFragment.newInstance(product.copy()))
                     .addToBackStack(null)
                     .commit();
         });
         rvProducts.setAdapter(adapter);
+
+        // Fetch dynamic products from PostgreSQL backend
+        fetchProductsFromBackend();
+    }
+
+    private void fetchProductsFromBackend() {
+        com.example.flamepro.network.ApiClient.getApiService().getProducts(null, null)
+                .enqueue(new retrofit2.Callback<com.example.flamepro.network.models.ProductListResponse>() {
+                    @Override
+                    public void onResponse(retrofit2.Call<com.example.flamepro.network.models.ProductListResponse> call,
+                                           retrofit2.Response<com.example.flamepro.network.models.ProductListResponse> response) {
+                        if (response.isSuccessful() && response.body() != null && response.body().getProducts() != null) {
+                            List<com.example.flamepro.network.models.ProductDto> dtos = response.body().getProducts();
+                            if (!dtos.isEmpty()) {
+                                allProductsList.clear();
+                                for (com.example.flamepro.network.models.ProductDto dto : dtos) {
+                                    allProductsList.add(dto.toProduct());
+                                }
+                                if (adapter != null) {
+                                    adapter.updateList(new ArrayList<>(allProductsList));
+                                }
+                            }
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(retrofit2.Call<com.example.flamepro.network.models.ProductListResponse> call, Throwable t) {
+                        // Offline or server not reachable yet; fallback local products are kept
+                    }
+                });
     }
 
     private void performCartAnimation(View animView) {

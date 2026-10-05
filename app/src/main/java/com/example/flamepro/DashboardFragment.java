@@ -97,18 +97,15 @@ public class DashboardFragment extends Fragment {
             if (getActivity() instanceof MainActivity) {
                 MainActivity mainActivity = (MainActivity) getActivity();
                 BottomNavigationView nav = mainActivity.findViewById(R.id.bottomNavigation);
-                
+
                 String name = service.getName();
-                switch (name) {
-                    case "Delivery":
-                        if (nav != null) nav.setSelectedItemId(R.id.nav_order);
-                        mainActivity.loadTopLevelFragment(new MyOrdersFragment());
-                        break;
-                    default:
-                        // All other services go to Shop for now
-                        if (nav != null) nav.setSelectedItemId(R.id.nav_shop);
-                        mainActivity.loadTopLevelFragment(new ShopFragment());
-                        break;
+                if (name.equals("Delivery")) {
+                    if (nav != null) nav.setSelectedItemId(R.id.nav_order);
+                    mainActivity.loadTopLevelFragment(new MyOrdersFragment());
+                } else {
+                    // Open service request form for Refilling, Installation, Maintenance, Inspection
+                    ServiceRequestSheet.newInstance(name)
+                            .show(getParentFragmentManager(), "service_request");
                 }
             }
         });
@@ -157,6 +154,29 @@ public class DashboardFragment extends Fragment {
         if (rvShopRow2 != null) {
             rvShopRow2.setAdapter(adapter2);
         }
+
+        // Fetch live products from backend so admin additions show up on home
+        com.example.flamepro.network.ApiClient.getApiService().getProducts(null, null)
+                .enqueue(new retrofit2.Callback<com.example.flamepro.network.models.ProductListResponse>() {
+                    @Override
+                    public void onResponse(retrofit2.Call<com.example.flamepro.network.models.ProductListResponse> call,
+                                           retrofit2.Response<com.example.flamepro.network.models.ProductListResponse> response) {
+                        if (response.isSuccessful() && response.body() != null && response.body().getProducts() != null) {
+                            List<com.example.flamepro.network.models.ProductDto> dtos = response.body().getProducts();
+                            if (!dtos.isEmpty()) {
+                                List<Product> liveProducts = new ArrayList<>();
+                                for (com.example.flamepro.network.models.ProductDto dto : dtos) {
+                                    liveProducts.add(dto.toProduct());
+                                }
+                                adapter1.updateList(liveProducts);
+                                adapter2.updateList(liveProducts);
+                            }
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(retrofit2.Call<com.example.flamepro.network.models.ProductListResponse> call, Throwable t) {}
+                });
     }
 
     private List<Product> getDummyProducts() {

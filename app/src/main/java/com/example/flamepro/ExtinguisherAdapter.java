@@ -33,7 +33,7 @@ public class ExtinguisherAdapter extends RecyclerView.Adapter<ExtinguisherAdapte
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Product product = products.get(position);
-        holder.ivExtinguisher.setImageResource(product.getImageResource());
+        ImageLoader.load(holder.ivExtinguisher, product.getImageUrl(), product.getImageResource());
         holder.tvName.setText(product.getName());
 
         holder.itemView.setOnClickListener(v -> {
@@ -46,6 +46,11 @@ public class ExtinguisherAdapter extends RecyclerView.Adapter<ExtinguisherAdapte
     @Override
     public int getItemCount() {
         return products.size();
+    }
+
+    public void updateList(List<Product> newProducts) {
+        this.products = newProducts;
+        notifyDataSetChanged();
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {

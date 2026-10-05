@@ -1,5 +1,10 @@
 package com.example.flamepro;
 
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.RectF;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -8,17 +13,15 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
-import java.util.Random;
-import java.util.TimeZone;
 
 public class CartFragment extends Fragment {
 
@@ -72,34 +75,14 @@ public class CartFragment extends Fragment {
         if (btnCheckout != null) {
             btnCheckout.setOnClickListener(v -> {
                 double total = CartManager.getInstance().getTotalPrice();
-                if (total <= 0) return;
-                
-                String totalStr = String.format(Locale.getDefault(), "₱ %.2f", total);
-                String estDelivery = OrderSuccessFragment.calculateDeliveryDateString();
-                
-                // Get selected items to save in order history
-                List<CartItem> orderedItems = new ArrayList<>();
-                for (CartItem item : CartManager.getInstance().getCartItems()) {
-                    if (item.isSelected()) {
-                        orderedItems.add(item);
-                    }
+                if (total <= 0) {
+                    android.widget.Toast.makeText(getContext(),
+                            "Please select at least one item", android.widget.Toast.LENGTH_SHORT).show();
+                    return;
                 }
-                
-                if (!orderedItems.isEmpty()) {
-                    TimeZone tz = TimeZone.getTimeZone("Asia/Manila");
-                    Calendar cal = Calendar.getInstance(tz);
-                    SimpleDateFormat sdf = new SimpleDateFormat("MMM d, yyyy • h:mm a", Locale.ENGLISH);
-                    sdf.setTimeZone(tz);
-                    String orderDateStr = sdf.format(cal.getTime());
-                    
-                    String orderId = "ORD - " + (4000 + new Random().nextInt(5000));
-                    Order newOrder = new Order(orderId, orderedItems, orderDateStr, estDelivery, totalStr, Order.OrderStatus.PENDING);
-                    OrderManager.getInstance().addOrder(newOrder);
-                }
-                
-                if (getActivity() instanceof MainActivity) {
-                    ((MainActivity) getActivity()).loadFragment(OrderSuccessFragment.newInstance(totalStr, estDelivery));
-                }
+                // Show order breakdown sheet before confirming
+                CartOrderSummarySheet.newInstance()
+                        .show(getParentFragmentManager(), "cart_summary");
             });
         }
 
@@ -146,6 +129,60 @@ public class CartFragment extends Fragment {
             }
         });
         rvCart.setAdapter(adapter);
+
+        // Swipe-left-to-delete
+        ItemTouchHelper swipeHelper = new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT) {
+            @Override
+            public boolean onMove(@NonNull RecyclerView rv, @NonNull RecyclerView.ViewHolder vh, @NonNull RecyclerView.ViewHolder target) {
+                return false;
+            }
+
+            @Override
+            public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
+                int position = viewHolder.getBindingAdapterPosition();
+                if (position == RecyclerView.NO_POSITION) return;
+                List<CartItem> items = CartManager.getInstance().getCartItems();
+                if (position < items.size()) {
+                    CartItem item = items.get(position);
+                    CartManager.getInstance().removeProduct(item.getProduct());
+                    adapter.removeItem(position);
+                    updateUI();
+                }
+            }
+
+            @Override
+            public void onChildDraw(@NonNull Canvas c, @NonNull RecyclerView recyclerView,
+                                    @NonNull RecyclerView.ViewHolder viewHolder, float dX, float dY,
+                                    int actionState, boolean isCurrentlyActive) {
+                if (actionState == ItemTouchHelper.ACTION_STATE_SWIPE && dX < 0) {
+                    View itemView = viewHolder.itemView;
+                    Paint paint = new Paint();
+                    paint.setColor(Color.parseColor("#E53935")); // red
+
+                    RectF background = new RectF(
+                            itemView.getRight() + dX,
+                            itemView.getTop() + 8f,
+                            itemView.getRight(),
+                            itemView.getBottom() - 8f
+                    );
+                    float radius = 16f;
+                    c.drawRoundRect(background, radius, radius, paint);
+
+                    // Draw trash icon
+                    Drawable trashIcon = ContextCompat.getDrawable(requireContext(), android.R.drawable.ic_menu_delete);
+                    if (trashIcon != null) {
+                        trashIcon.setTint(Color.WHITE);
+                        int iconSize = 64;
+                        int iconLeft = itemView.getRight() - iconSize - 32;
+                        int iconTop = itemView.getTop() + (itemView.getHeight() - iconSize) / 2;
+                        trashIcon.setBounds(iconLeft, iconTop, iconLeft + iconSize, iconTop + iconSize);
+                        trashIcon.draw(c);
+                    }
+                }
+                super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive);
+            }
+        });
+        swipeHelper.attachToRecyclerView(rvCart);
     }
 
     private void updateUI() {
