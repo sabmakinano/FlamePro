@@ -21,7 +21,6 @@ public class SignUpActivity extends AppCompatActivity {
     private EditText etConfirmPassword;
     private Button btnCreateAccount;
     private LinearLayout btnGoogle;
-    private LinearLayout btnFacebook;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,6 +35,11 @@ public class SignUpActivity extends AppCompatActivity {
             return insets;
         });
 
+        UserManager.getInstance().clear();
+        OrderManager.getInstance().clearOrders();
+        OrderManager.getInstance().clearRecentOrders();
+        CartManager.getInstance().clear();
+
         initializeViews();
         setupClickListeners();
     }
@@ -46,15 +50,12 @@ public class SignUpActivity extends AppCompatActivity {
         etConfirmPassword = findViewById(R.id.etConfirmPassword);
         btnCreateAccount = findViewById(R.id.btnCreateAccount);
         btnGoogle = findViewById(R.id.btnGoogle);
-        btnFacebook = findViewById(R.id.btnFacebook);
     }
 
     private void setupClickListeners() {
         btnCreateAccount.setOnClickListener(v -> performSignUp());
 
         btnGoogle.setOnClickListener(v -> Toast.makeText(SignUpActivity.this, "Google Sign Up Clicked", Toast.LENGTH_SHORT).show());
-
-        btnFacebook.setOnClickListener(v -> Toast.makeText(SignUpActivity.this, "Facebook Sign Up Clicked", Toast.LENGTH_SHORT).show());
     }
 
     private void performSignUp() {
@@ -94,6 +95,12 @@ public class SignUpActivity extends AppCompatActivity {
 
         if (password.length() < 6) {
             etPassword.setError("Password must be at least 6 characters");
+            etPassword.requestFocus();
+            return;
+        }
+
+        if (!password.matches(".*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>\\/?].*")) {
+            etPassword.setError("Password must contain at least one special character (e.g. !@#$%^&*)");
             etPassword.requestFocus();
             return;
         }

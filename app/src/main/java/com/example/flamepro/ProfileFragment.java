@@ -67,16 +67,19 @@ public class ProfileFragment extends Fragment {
     }
 
     @Override
-    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
+    public void onResume() {
+        super.onResume();
+        if (getView() != null) {
+            updateCounters(getView());
+        }
+    }
 
-        // Fetch numbers from OrderManager dynamically
+    private void updateCounters(View view) {
         int pendingCount = OrderManager.getInstance().getOrdersByStatus(Order.OrderStatus.PENDING).size();
         int shippedCount = OrderManager.getInstance().getOrdersByStatus(Order.OrderStatus.SHIPPED).size();
         int deliveredCount = OrderManager.getInstance().getOrdersByStatus(Order.OrderStatus.DELIVERED).size();
         int cancelledCount = OrderManager.getInstance().getOrdersByStatus(Order.OrderStatus.CANCELLED).size();
         
-        // Active orders excludes cancelled ones
         int totalOrdersCount = pendingCount + shippedCount + deliveredCount;
 
         TextView tvOrdersCount = view.findViewById(R.id.tvOrdersCount);
@@ -86,7 +89,6 @@ public class ProfileFragment extends Fragment {
         
         TextView tvProfileName = view.findViewById(R.id.tvProfileName);
         TextView tvProfileEmail = view.findViewById(R.id.tvProfileEmail);
-        ivAvatar = view.findViewById(R.id.ivAvatar);
 
         if (tvOrdersCount != null) tvOrdersCount.setText("" + totalOrdersCount);
         if (tvDeliveryCount != null) tvDeliveryCount.setText("" + shippedCount);
@@ -96,6 +98,42 @@ public class ProfileFragment extends Fragment {
         UserManager um = UserManager.getInstance();
         if (tvProfileName != null) tvProfileName.setText(um.getFullName());
         if (tvProfileEmail != null) tvProfileEmail.setText(um.getEmailOrUsername());
+
+        int userId = um.getUserId();
+        if (userId > 0) {
+            com.example.flamepro.network.ApiClient.getApiService().getUserOrders(userId)
+                    .enqueue(new retrofit2.Callback<com.example.flamepro.network.models.OrderListResponse>() {
+                        @Override
+                        public void onResponse(@NonNull retrofit2.Call<com.example.flamepro.network.models.OrderListResponse> call,
+                                               @NonNull retrofit2.Response<com.example.flamepro.network.models.OrderListResponse> response) {
+                            if (!isAdded() || getView() == null) return;
+                            if (response.isSuccessful() && response.body() != null && response.body().getOrders() != null) {
+                                OrderManager.getInstance().syncFromBackend(response.body().getOrders());
+                                int p = OrderManager.getInstance().getOrdersByStatus(Order.OrderStatus.PENDING).size();
+                                int s = OrderManager.getInstance().getOrdersByStatus(Order.OrderStatus.SHIPPED).size();
+                                int d = OrderManager.getInstance().getOrdersByStatus(Order.OrderStatus.DELIVERED).size();
+                                int c = OrderManager.getInstance().getOrdersByStatus(Order.OrderStatus.CANCELLED).size();
+                                if (tvOrdersCount != null) tvOrdersCount.setText("" + (p + s + d));
+                                if (tvDeliveryCount != null) tvDeliveryCount.setText("" + s);
+                                if (tvReceiveCount != null) tvReceiveCount.setText("" + d);
+                                if (tvCancelledCount != null) tvCancelledCount.setText("" + c);
+                            }
+                        }
+
+                        @Override
+                        public void onFailure(@NonNull retrofit2.Call<com.example.flamepro.network.models.OrderListResponse> call,
+                                              @NonNull Throwable t) {}
+                    });
+        }
+    }
+
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+
+        updateCounters(view);
+        ivAvatar = view.findViewById(R.id.ivAvatar);
+        UserManager um = UserManager.getInstance();
         
         if (ivAvatar != null && um.getProfileImageUri() != null) {
             ivAvatar.setImageURI(Uri.parse(um.getProfileImageUri()));
@@ -121,13 +159,6 @@ public class ProfileFragment extends Fragment {
         view.findViewById(R.id.boxReceiveClick).setOnClickListener(openOrdersListener);
         view.findViewById(R.id.boxCancelledClick).setOnClickListener(openOrdersListener);
 
-        // Shipping Grid Row boxes click handlers
-        view.findViewById(R.id.btnToPay).setOnClickListener(v -> Toast.makeText(getContext(), "To Pay clicked", Toast.LENGTH_SHORT).show());
-        view.findViewById(R.id.btnToShip).setOnClickListener(v -> Toast.makeText(getContext(), "To Ship clicked", Toast.LENGTH_SHORT).show());
-        view.findViewById(R.id.btnToReceive).setOnClickListener(v -> Toast.makeText(getContext(), "To Receive clicked", Toast.LENGTH_SHORT).show());
-        view.findViewById(R.id.btnToReview).setOnClickListener(v -> Toast.makeText(getContext(), "To Review clicked", Toast.LENGTH_SHORT).show());
-        view.findViewById(R.id.btnReturns).setOnClickListener(v -> Toast.makeText(getContext(), "Returns clicked", Toast.LENGTH_SHORT).show());
-
         // Header and standard control links
         view.findViewById(R.id.btnManageProfile).setOnClickListener(v -> {
             if (getActivity() != null) {
@@ -135,6 +166,13 @@ public class ProfileFragment extends Fragment {
                 startActivity(intent);
             }
         });
+        View btnEquipmentTracker = view.findViewById(R.id.btnEquipmentTracker);
+        if (btnEquipmentTracker != null) {
+            btnEquipmentTracker.setOnClickListener(v -> {
+                new EquipmentTrackerBottomSheet().show(getParentFragmentManager(), "equipment_tracker");
+            });
+        }
+
         view.findViewById(R.id.btnTrackOrderTop).setOnClickListener(openOrdersListener);
         view.findViewById(R.id.btnRecentOrderTop).setOnClickListener(v -> {
             if (getActivity() instanceof MainActivity) {
@@ -147,6 +185,10 @@ public class ProfileFragment extends Fragment {
         // Hover & click log out operation button redirect
         view.findViewById(R.id.btnSignOut).setOnClickListener(v -> {
             Toast.makeText(getContext(), "Logging out...", Toast.LENGTH_SHORT).show();
+            UserManager.getInstance().clear(getContext());
+            OrderManager.getInstance().clearOrders();
+            OrderManager.getInstance().clearRecentOrders();
+            CartManager.getInstance().clear();
             if (getActivity() != null) {
                 Intent intent = new Intent(getActivity(), LoginActivity.class);
                 intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);

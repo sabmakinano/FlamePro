@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>FlamePro SRS</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: Arial, sans-serif;
+      font-size: 12pt;
+      color: #000;
+      background: #fff;
+      padding: 60px 80px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    /* Title Block */
+    .title-block {
+      text-align: center;
+      margin-bottom: 36px;
+      border-bottom: 2px solid #000;
+      padding-bottom: 24px;
+    }
+
+    .title-block h1 {
+      font-size: 16pt;
+      font-weight: bold;
+      margin-bottom: 14px;
+      letter-spacing: 0.5px;
+    }
+
+    .title-block p {
+      font-size: 11pt;
+      line-height: 1.8;
+    }
+
+    /* Section Headings */
+    h2 {
+      font-size: 13pt;
+      font-weight: bold;
+      margin-top: 28px;
+      margin-bottom: 10px;
+      border-bottom: 1px solid #000;
+      padding-bottom: 4px;
+    }
+
+    /* Paragraphs */
+    p {
+      font-size: 11.5pt;
+      line-height: 1.7;
+      margin-bottom: 10px;
+      text-align: justify;
+    }
+
+    /* FR Blocks */
+    .fr-block {
+      margin-bottom: 14px;
+    }
+
+    .fr-block .fr-title {
+      font-weight: bold;
+      font-size: 11.5pt;
+      margin-bottom: 4px;
+    }
+
+    .fr-block ul {
+      padding-left: 22px;
+    }
+
+    .fr-block ul li {
+      font-size: 11.5pt;
+      line-height: 1.7;
+      list-style-type: disc;
+    }
+
+    /* Tables */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      margin-bottom: 16px;
+      font-size: 11pt;
+    }
+
+    thead tr {
+      background-color: #222;
+      color: #fff;
+    }
+
+    thead th {
+      padding: 8px 10px;
+      text-align: left;
+      font-weight: bold;
+    }
+
+    tbody tr:nth-child(even) {
+      background-color: #f4f4f4;
+    }
+
+    tbody td {
+      padding: 7px 10px;
+      border: 1px solid #ccc;
+      vertical-align: top;
+    }
+
+    /* Print settings */
+    @media print {
+      body {
+        padding: 40px 60px;
+      }
+      @page {
+        margin: 1.2cm 1.5cm;
+        size: A4;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Title -->
+  <div class="title-block">
+    <h1>SOFTWARE REQUIREMENTS SPECIFICATION (SRS)</h1>
+    <p>
+      <strong>Project Title:</strong> FlamePro — Fire Extinguisher Ordering System<br>
+      <strong>Prepared by:</strong> Glen Mark Vincent Casayas, Hannah Sabrina Makinano,<br>
+      Angel Craven Maquira, Adriel John Valencia<br>
+      <strong>Subject:</strong> IT083 – IT Project Management<br>
+      <strong>Institution:</strong> Southwestern University PHINMA<br>
+      <strong>Date:</strong> October 2026
+    </p>
+  </div>
+
+  <!-- 1. System Overview -->
+  <h2>1. System Overview</h2>
+  <p>
+    FlamePro is a mobile application for Android that allows customers to purchase fire extinguishers
+    and book on-site refill services using Cash on Delivery (COD). The backend runs on a PHP REST API
+    connected to a PostgreSQL database. A separate web-based admin portal handles staff management,
+    order dispatching, and sales monitoring.
+  </p>
+
+  <!-- 2. User Roles -->
+  <h2>2. User Roles</h2>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:22%">Role</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Customer</td>
+        <td>Browses products, places COD orders, books refill services, and tracks order status</td>
+      </tr>
+      <tr>
+        <td>Sales Staff</td>
+        <td>Approves orders, monitors stock, and coordinates delivery assignments</td>
+      </tr>
+      <tr>
+        <td>Delivery Driver</td>
+        <td>Views assigned deliveries and updates order delivery status</td>
+      </tr>
+      <tr>
+        <td>Field Technician</td>
+        <td>Views assigned service tickets and updates job completion status</td>
+      </tr>
+      <tr>
+        <td>Super Admin</td>
+        <td>Full access — manages staff accounts, products, pricing, and all system records</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- 3. Functional Requirements -->
+  <h2>3. Functional Requirements</h2>
+
+  <div class="fr-block">
+    <div class="fr-title">FR-01 — User Registration</div>
+    <ul>
+      <li>Customers register using a unique username, email, and password</li>
+      <li>Password must be at least 6 characters</li>
+      <li>Duplicate usernames or emails are rejected by the system</li>
+      <li>Passwords are stored as bcrypt hashes in the database</li>
+    </ul>
+  </div>
+
+  <div class="fr-block">
+    <div class="fr-title">FR-02 — User Login and Role Routing</div>
+    <ul>
+      <li>Users log in using their username or email and password</li>
+      <li>The system checks credentials against the database</li>
+      <li>After login, each user is routed to their role-specific screen</li>
+      <li>Deactivated accounts are blocked from logging in</li>
+    </ul>
+  </div>
+
+  <div class="fr-block">
+    <div class="fr-title">FR-03 — Product Catalog</div>
+    <ul>
+      <li>Products are grouped by category: Fire Extinguishers, Sprinklers, Fire Hose, Fireman Equipment, and Others</li>
+      <li>Each product shows name, price, discounted price, rating, and stock status</li>
+      <li>Out-of-stock products cannot be added to the cart</li>
+    </ul>
+  </div>
+
+  <div class="fr-block">
+    <div class="fr-title">FR-04 — Shopping Cart and COD Checkout</div>
+    <ul>
+      <li>Customers can add products, change quantities, and remove items from the cart</li>
+      <li>The cart calculates and displays a live total price</li>
+      <li>At checkout, customers enter their shipping address and confirm Cash on Delivery</li>
+      <li>The system generates a unique order number (FP-YYYYMMDD-XXXX) and saves the order as Pending</li>
+    </ul>
+  </div>
+
+  <div class="fr-block">
+    <div class="fr-title">FR-05 — Service Booking</div>
+    <ul>
+      <li>Customers can request on-site services: Refilling, Hydrostatic Testing, Installation, or Inspection</li>
+      <li>Customers select a preferred date and time and add equipment notes</li>
+      <li>Service requests are saved with status Pending and queued for technician assignment</li>
+    </ul>
+  </div>
+
+  <div class="fr-block">
+    <div class="fr-title">FR-06 — Order Tracking</div>
+    <ul>
+      <li>Customers can view their order history and current order status</li>
+      <li>Order status flow: Pending → Out for Delivery → Delivered (or Cancelled)</li>
+    </ul>
+  </div>
+
+  <div class="fr-block">
+    <div class="fr-title">FR-07 — Delivery Driver Workflow</div>
+    <ul>
+      <li>Drivers see only the orders assigned to them</li>
+      <li>Drivers update delivery status: Assigned → Out for Delivery → Delivered</li>
+    </ul>
+  </div>
+
+  <div class="fr-block">
+    <div class="fr-title">FR-08 — Technician Workflow</div>
+    <ul>
+      <li>Technicians see only the service tickets assigned to them</li>
+      <li>Technicians update job status: Assigned → In Progress → Completed</li>
+    </ul>
+  </div>
+
+  <div class="fr-block">
+    <div class="fr-title">FR-09 — Admin and Sales Web Portal</div>
+    <ul>
+      <li>Admins and Sales staff log in through a separate web portal</li>
+      <li>Admins assign delivery riders to pending orders</li>
+      <li>Admins assign technicians to pending service requests</li>
+      <li>Admins can add, edit, and deactivate staff accounts</li>
+      <li>The portal shows KPI analytics: total orders, revenue, and active staff count</li>
+    </ul>
+  </div>
+
+  <div class="fr-block">
+    <div class="fr-title">FR-10 — Profile Management</div>
+    <ul>
+      <li>Customers can update their name, phone number, and delivery address</li>
+      <li>Changes are saved to the database and reflected immediately in the app</li>
+    </ul>
+  </div>
+
+  <!-- 4. Non-Functional Requirements -->
+  <h2>4. Non-Functional Requirements</h2>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:8%">ID</th>
+        <th style="width:20%">Requirement</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>NFR-01</td>
+        <td>Security</td>
+        <td>All passwords use bcrypt hashing. All SQL queries use prepared statements to prevent SQL injection attacks.</td>
+      </tr>
+      <tr>
+        <td>NFR-02</td>
+        <td>Performance</td>
+        <td>API responses must load within 3 seconds on a stable Wi-Fi or mobile data connection.</td>
+      </tr>
+      <tr>
+        <td>NFR-03</td>
+        <td>Compatibility</td>
+        <td>The Android app runs on Android 8.0 (API Level 26) and above. The web portal works on Chrome, Edge, and Firefox.</td>
+      </tr>
+      <tr>
+        <td>NFR-04</td>
+        <td>Usability</td>
+        <td>The mobile interface follows Google Material Design guidelines with clear buttons and readable text layouts.</td>
+      </tr>
+      <tr>
+        <td>NFR-05</td>
+        <td>Reliability</td>
+        <td>The system handles empty cart errors, duplicate orders, and network failures with clear error messages shown to the user.</td>
+      </tr>
+      <tr>
+        <td>NFR-06</td>
+        <td>Maintainability</td>
+        <td>Backend API endpoints are organized into separate PHP files by function: auth, orders, products, delivery, and technician.</td>
+      </tr>
+    </tbody>
+  </table>
+
+</body>
+</html>

@@ -141,11 +141,24 @@
             </LinearLayout>
 
             <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnReschedule"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="6dp"
+                android:text="Reschedule"
+                android:textColor="#555555"
+                android:textAllCaps="false"
+                android:textSize="11sp"
+                app:strokeColor="#CCCCCC"
+                app:cornerRadius="10dp" />
+
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnMarkDelivered"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:backgroundTint="@color/brand_red"
-                android:text="Mark Delivered"
+                android:text="Delivered"
                 android:textAllCaps="false"
                 android:textSize="12sp"
                 app:cornerRadius="10dp" />

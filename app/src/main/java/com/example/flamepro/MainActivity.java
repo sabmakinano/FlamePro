@@ -48,6 +48,38 @@ public class MainActivity extends AppCompatActivity {
             String userName = getIntent().getStringExtra("USER_NAME");
             loadFragment(DashboardFragment.newInstance(userName));
         }
+
+        UserManager.getInstance().loadFromPreferences(this);
+        syncUserOrders();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        syncUserOrders();
+    }
+
+    private void syncUserOrders() {
+        int userId = UserManager.getInstance().getUserId();
+        if (userId <= 0) {
+            UserManager.getInstance().loadFromPreferences(this);
+            userId = UserManager.getInstance().getUserId();
+        }
+        if (userId > 0) {
+            com.example.flamepro.network.ApiClient.getApiService().getUserOrders(userId).enqueue(new retrofit2.Callback<com.example.flamepro.network.models.OrderListResponse>() {
+                @Override
+                public void onResponse(@androidx.annotation.NonNull retrofit2.Call<com.example.flamepro.network.models.OrderListResponse> call,
+                                       @androidx.annotation.NonNull retrofit2.Response<com.example.flamepro.network.models.OrderListResponse> response) {
+                    if (response.isSuccessful() && response.body() != null && response.body().getOrders() != null) {
+                        OrderManager.getInstance().syncFromBackend(response.body().getOrders());
+                    }
+                }
+
+                @Override
+                public void onFailure(@androidx.annotation.NonNull retrofit2.Call<com.example.flamepro.network.models.OrderListResponse> call,
+                                      @androidx.annotation.NonNull Throwable t) {}
+            });
+        }
     }
 
     private void initializeViews() {

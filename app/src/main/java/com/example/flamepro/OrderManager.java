@@ -15,15 +15,7 @@ public class OrderManager {
     }
 
     private void initializeRecentOrders() {
-        Product p1 = new Product("HALO Smart Smoke Detector", "₱ 2,499.00", "", "", 4.8f, 100, R.drawable.ic_check_circle, null, "White", "Smart Sensor", "", null, "", true);
-        Product p2 = new Product("UGREEN PD 20W Fast Charger", "₱ 703.48", "", "", 4.7f, 50, R.drawable.ic_lightning, null, "White + 1M Cable", "Charger", "", null, "", true);
-        Product p3 = new Product("Industrial Safety Helmet", "₱ 980.00", "", "", 4.9f, 30, R.drawable.ic_fire_type, null, "Yellow", "PPE", "", null, "", true);
-        Product p4 = new Product("Heavy-Duty Rescue Rope", "₱ 2,150.00", "", "", 4.6f, 20, R.drawable.ic_coverage, null, "30m", "Safety Gear", "", null, "", true);
-
-        recentOrders.add(new RecentOrderProduct("HaloSafetyShop", "1:17 PM Delivered", p1));
-        recentOrders.add(new RecentOrderProduct("UgreenOfficialShop", "1:17 PM Delivered", p2));
-        recentOrders.add(new RecentOrderProduct("ArmorGuard Off", "Seller preparing package", p3));
-        recentOrders.add(new RecentOrderProduct("ClimbSafe Gear", "In Transit", p4));
+        // Real user orders will populate recent orders
     }
 
     public static synchronized OrderManager getInstance() {
@@ -51,9 +43,60 @@ public class OrderManager {
         orders.clear();
     }
 
+    public void setOrders(List<Order> newOrders) {
+        orders.clear();
+        if (newOrders != null) {
+            orders.addAll(newOrders);
+        }
+    }
+
     public void addOrder(Order order) {
         // Add to the beginning so newest order is at the top
         orders.add(0, order);
+        if (order != null && order.getItems() != null) {
+            for (CartItem ci : order.getItems()) {
+                if (ci != null && ci.getProduct() != null) {
+                    recentOrders.add(0, new RecentOrderProduct("FlamePro Official Store", "Order Placed", ci.getProduct()));
+                }
+            }
+        }
+    }
+
+    public void syncFromBackend(List<com.example.flamepro.network.models.OrderDto> dtos) {
+        if (dtos == null) return;
+        orders.clear();
+        recentOrders.clear();
+        for (com.example.flamepro.network.models.OrderDto dto : dtos) {
+            List<CartItem> items = new ArrayList<>();
+            if (dto.getItems() != null) {
+                for (com.example.flamepro.network.models.OrderDto.OrderItemDto item : dto.getItems()) {
+                    Product p = new Product(
+                            item.getProductName(),
+                            item.getUnitPrice() != null ? item.getUnitPrice() : "₱0",
+                            "", "", 5.0f, 100,
+                            R.drawable.logo, null, "", "Fire Safety", "", null, "", true
+                    );
+                    items.add(new CartItem(p, item.getQuantity()));
+                    recentOrders.add(new RecentOrderProduct("FlamePro Official Store", dto.getCreatedAt() != null ? dto.getCreatedAt() : dto.getStatus(), p));
+                }
+            }
+            Order.OrderStatus status = Order.OrderStatus.PENDING;
+            if (dto.getStatus() != null) {
+                String s = dto.getStatus().toLowerCase();
+                if (s.contains("deliver")) status = Order.OrderStatus.DELIVERED;
+                else if (s.contains("cancel")) status = Order.OrderStatus.CANCELLED;
+                else if (s.contains("transit") || s.contains("ship") || s.contains("out")) status = Order.OrderStatus.SHIPPED;
+            }
+            String dateDisplay = dto.getCreatedAt() != null && dto.getCreatedAt().length() >= 10 ? dto.getCreatedAt().substring(0, 10) : "—";
+            orders.add(new Order(
+                    dto.getOrderNumber() != null ? dto.getOrderNumber() : "#" + dto.getId(),
+                    items,
+                    dateDisplay,
+                    dto.getStatus(),
+                    dto.getTotalPrice() != null ? dto.getTotalPrice() : "₱0.00",
+                    status
+            ));
+        }
     }
 
     public List<Order> getOrders() {
@@ -68,5 +111,25 @@ public class OrderManager {
             }
         }
         return filtered;
+    }
+
+    public void updateOrderStatus(String orderId, Order.OrderStatus status) {
+        if (orderId == null) return;
+        for (Order o : orders) {
+            if (o.getOrderId() != null && o.getOrderId().equalsIgnoreCase(orderId)) {
+                o.setStatus(status);
+            }
+        }
+    }
+
+    public void updateOrderStatus(Order order, Order.OrderStatus status) {
+        if (order == null) return;
+        order.setStatus(status);
+        for (Order o : orders) {
+            if ((o.getOrderId() != null && o.getOrderId().equalsIgnoreCase(order.getOrderId()))
+                    || (o.getBackendId() > 0 && o.getBackendId() == order.getBackendId())) {
+                o.setStatus(status);
+            }
+        }
     }
 }

@@ -40,6 +40,11 @@ public interface ApiService {
             @Query("user_id") int userId
     );
 
+    @POST("api/orders/cancel_order.php")
+    Call<com.example.flamepro.network.models.SimpleStatusResponse> cancelOrder(
+            @Body Map<String, Object> body
+    );
+
     @GET("api/delivery/get_assigned_orders.php")
     Call<com.example.flamepro.network.models.DeliveryOrdersResponse> getDeliveryOrders(
             @Query("rider_id") int riderId
@@ -62,6 +67,26 @@ public interface ApiService {
 
     @POST("api/services/create_service_request.php")
     Call<com.example.flamepro.network.models.SimpleStatusResponse> createServiceRequest(
+            @Body Map<String, Object> body
+    );
+
+    @GET("api/services/get_user_services.php")
+    Call<com.example.flamepro.network.models.TechnicianServicesResponse> getUserServices(
+            @Query("user_id") int userId
+    );
+
+    @POST("api/services/cancel_service_request.php")
+    Call<com.example.flamepro.network.models.SimpleStatusResponse> cancelServiceRequest(
+            @Body Map<String, Object> body
+    );
+
+    @POST("api/auth/forgot_password.php")
+    Call<com.example.flamepro.network.models.SimpleStatusResponse> forgotPassword(
+            @Body Map<String, Object> body
+    );
+
+    @POST("api/auth/reset_password_with_otp.php")
+    Call<com.example.flamepro.network.models.SimpleStatusResponse> resetPasswordWithOtp(
             @Body Map<String, Object> body
     );
 }

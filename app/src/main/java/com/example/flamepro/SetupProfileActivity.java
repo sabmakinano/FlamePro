@@ -213,13 +213,56 @@ public class SetupProfileActivity extends AppCompatActivity {
             um.setProfileImageUri(selectedImageUri.toString());
         }
 
-        Toast.makeText(this, "Profile Saved Successfully", Toast.LENGTH_SHORT).show();
+        btnSaveProfile.setEnabled(false);
+        btnSaveProfile.setText("Saving to Server...");
 
-        Intent intent = new Intent(SetupProfileActivity.this, MainActivity.class);
-        intent.putExtra("USER_NAME", um.getFullName());
-        startActivity(intent);
-        overridePendingTransition(R.anim.fade_in, R.anim.fade_out);
-        finish();
+        // Call backend API to persist to PostgreSQL (Issue #17)
+        java.util.Map<String, Object> body = new java.util.HashMap<>();
+        body.put("id", um.getUserId());
+        body.put("email", um.getEmailOrUsername());
+        body.put("first_name", firstName);
+        body.put("last_name", lastName);
+        body.put("middle_name", etMiddleName.getText().toString().trim());
+        body.put("phone_number", phoneNumber);
+        body.put("address", address);
+        body.put("barangay", barangay);
+        body.put("city", city);
+        body.put("province", province);
+
+        com.example.flamepro.network.ApiClient.getApiService().updateProfile(body)
+                .enqueue(new retrofit2.Callback<com.example.flamepro.network.models.AuthResponse>() {
+                    @Override
+                    public void onResponse(retrofit2.Call<com.example.flamepro.network.models.AuthResponse> call,
+                                           retrofit2.Response<com.example.flamepro.network.models.AuthResponse> response) {
+                        btnSaveProfile.setEnabled(true);
+                        btnSaveProfile.setText("Save Profile");
+
+                        if (response.isSuccessful() && response.body() != null && response.body().getUser() != null) {
+                            um.updateFromUser(response.body().getUser());
+                        }
+
+                        Toast.makeText(SetupProfileActivity.this, "Profile Saved Successfully", Toast.LENGTH_SHORT).show();
+                        Intent intent = new Intent(SetupProfileActivity.this, MainActivity.class);
+                        intent.putExtra("USER_NAME", um.getFullName());
+                        startActivity(intent);
+                        overridePendingTransition(R.anim.fade_in, R.anim.fade_out);
+                        finish();
+                    }
+
+                    @Override
+                    public void onFailure(retrofit2.Call<com.example.flamepro.network.models.AuthResponse> call, Throwable t) {
+                        btnSaveProfile.setEnabled(true);
+                        btnSaveProfile.setText("Save Profile");
+
+                        // Still proceed to main activity even if offline
+                        Toast.makeText(SetupProfileActivity.this, "Saved locally (Offline)", Toast.LENGTH_SHORT).show();
+                        Intent intent = new Intent(SetupProfileActivity.this, MainActivity.class);
+                        intent.putExtra("USER_NAME", um.getFullName());
+                        startActivity(intent);
+                        overridePendingTransition(R.anim.fade_in, R.anim.fade_out);
+                        finish();
+                    }
+                });
     }
 
     @Override

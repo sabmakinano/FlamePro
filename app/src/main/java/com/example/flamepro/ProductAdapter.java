@@ -69,23 +69,60 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ViewHold
         holder.tvReviews.setText("(" + product.getReviews() + ")");
         ImageLoader.load(holder.ivImage, product.getImageUrl(), product.getImageResource());
 
-        holder.ivImage.setOnClickListener(v -> {
-            if (productClickListener != null) {
-                productClickListener.onProductClick(product);
-            }
-        });
+        boolean isAvailable = product.isInStock() && product.getStockQuantity() > 0;
 
-        holder.btnAddToCart.setOnClickListener(v -> {
-            if (addToCartListener != null) {
-                addToCartListener.onAddToCartClick(product);
-            }
-        });
+        if (!isAvailable) {
+            holder.itemView.setAlpha(0.45f);
+            holder.btnAddToCart.setEnabled(false);
+            holder.btnAddToCart.setAlpha(0.3f);
+            holder.btnBuyNow.setEnabled(false);
+            holder.btnBuyNow.setAlpha(0.3f);
+            holder.btnBuyNow.setText("OUT");
+            holder.btnAddToCart.setText("OUT");
 
-        holder.btnBuyNow.setOnClickListener(v -> {
-            if (buyNowListener != null) {
-                buyNowListener.onBuyNowClick(product);
-            }
-        });
+            View.OnClickListener outOfStockListener = v -> {
+                android.widget.Toast.makeText(v.getContext(), 
+                        "'" + product.getName() + "' is currently out of stock", 
+                        android.widget.Toast.LENGTH_SHORT).show();
+            };
+
+            holder.itemView.setOnClickListener(outOfStockListener);
+            holder.ivImage.setOnClickListener(outOfStockListener);
+            holder.btnAddToCart.setOnClickListener(outOfStockListener);
+            holder.btnBuyNow.setOnClickListener(outOfStockListener);
+        } else {
+            holder.itemView.setAlpha(1.0f);
+            holder.btnAddToCart.setEnabled(true);
+            holder.btnAddToCart.setAlpha(1.0f);
+            holder.btnBuyNow.setEnabled(true);
+            holder.btnBuyNow.setAlpha(1.0f);
+            holder.btnBuyNow.setText(R.string.buy_caps);
+            holder.btnAddToCart.setText(R.string.cart_caps);
+
+            holder.itemView.setOnClickListener(v -> {
+                if (productClickListener != null) {
+                    productClickListener.onProductClick(product);
+                }
+            });
+
+            holder.ivImage.setOnClickListener(v -> {
+                if (productClickListener != null) {
+                    productClickListener.onProductClick(product);
+                }
+            });
+
+            holder.btnAddToCart.setOnClickListener(v -> {
+                if (addToCartListener != null) {
+                    addToCartListener.onAddToCartClick(product);
+                }
+            });
+
+            holder.btnBuyNow.setOnClickListener(v -> {
+                if (buyNowListener != null) {
+                    buyNowListener.onBuyNowClick(product);
+                }
+            });
+        }
     }
 
     @Override

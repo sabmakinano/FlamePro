@@ -21,6 +21,7 @@ public class DeliveryOrderAdapter extends RecyclerView.Adapter<DeliveryOrderAdap
 
     public interface OnDeliveryActionListener {
         void onMarkDelivered(DeliveryOrderDto order);
+        void onReschedule(DeliveryOrderDto order);
     }
 
     private final List<DeliveryOrderDto> orders;
@@ -74,21 +75,31 @@ public class DeliveryOrderAdapter extends RecyclerView.Adapter<DeliveryOrderAdap
         holder.tvTotalAmount.setText(order.getTotalPrice());
 
         boolean isDelivered = "Delivered".equalsIgnoreCase(order.getStatus());
+        boolean isRescheduled = order.getStatus() != null && order.getStatus().contains("Rescheduled");
+
         if (isDelivered) {
             holder.tvOrderStatus.setText("Delivered");
             holder.tvOrderStatus.setBackgroundResource(R.drawable.badge_delivered);
             holder.btnMarkDelivered.setEnabled(false);
             holder.btnMarkDelivered.setText("Delivered ✓");
             holder.btnMarkDelivered.setBackgroundTintList(context.getColorStateList(R.color.success_green));
+            holder.btnReschedule.setVisibility(View.GONE);
         } else {
-            holder.tvOrderStatus.setText(order.getStatus() != null ? order.getStatus() : "Assigned");
-            holder.tvOrderStatus.setBackgroundResource(R.drawable.badge_pending);
+            holder.tvOrderStatus.setText(isRescheduled ? "Rescheduled" : (order.getStatus() != null ? order.getStatus() : "Assigned"));
+            holder.tvOrderStatus.setBackgroundResource(isRescheduled ? R.drawable.badge_pending : R.drawable.badge_pending);
             holder.btnMarkDelivered.setEnabled(true);
-            holder.btnMarkDelivered.setText("Mark Delivered");
+            holder.btnMarkDelivered.setText("Delivered");
             holder.btnMarkDelivered.setBackgroundTintList(context.getColorStateList(R.color.brand_red));
             holder.btnMarkDelivered.setOnClickListener(v -> {
                 if (listener != null) {
                     listener.onMarkDelivered(order);
+                }
+            });
+
+            holder.btnReschedule.setVisibility(View.VISIBLE);
+            holder.btnReschedule.setOnClickListener(v -> {
+                if (listener != null) {
+                    listener.onReschedule(order);
                 }
             });
         }
@@ -107,7 +118,7 @@ public class DeliveryOrderAdapter extends RecyclerView.Adapter<DeliveryOrderAdap
 
     static class DeliveryViewHolder extends RecyclerView.ViewHolder {
         TextView tvOrderNumber, tvOrderStatus, tvCustomerName, tvCustomerAddress, tvCustomerPhone, tvItemsSummary, tvTotalAmount;
-        MaterialButton btnMarkDelivered;
+        MaterialButton btnMarkDelivered, btnReschedule;
 
         public DeliveryViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -119,6 +130,7 @@ public class DeliveryOrderAdapter extends RecyclerView.Adapter<DeliveryOrderAdap
             tvItemsSummary = itemView.findViewById(R.id.tvItemsSummary);
             tvTotalAmount = itemView.findViewById(R.id.tvTotalAmount);
             btnMarkDelivered = itemView.findViewById(R.id.btnMarkDelivered);
+            btnReschedule = itemView.findViewById(R.id.btnReschedule);
         }
     }
 }

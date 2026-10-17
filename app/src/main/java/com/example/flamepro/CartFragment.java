@@ -80,6 +80,14 @@ public class CartFragment extends Fragment {
                             "Please select at least one item", android.widget.Toast.LENGTH_SHORT).show();
                     return;
                 }
+                for (CartItem ci : CartManager.getInstance().getCartItems()) {
+                    if (ci.isSelected() && (!ci.getProduct().isInStock() || ci.getProduct().getStockQuantity() <= 0)) {
+                        android.widget.Toast.makeText(getContext(),
+                                "'" + ci.getProduct().getName() + "' is out of stock. Please uncheck it to proceed.", 
+                                android.widget.Toast.LENGTH_LONG).show();
+                        return;
+                    }
+                }
                 // Show order breakdown sheet before confirming
                 CartOrderSummarySheet.newInstance()
                         .show(getParentFragmentManager(), "cart_summary");
@@ -126,6 +134,21 @@ public class CartFragment extends Fragment {
                     adapter.removeItem(position);
                 }
                 updateUI();
+            }
+
+            @Override
+            public void onItemClick(CartItem item) {
+                if (item != null && item.getProduct() != null) {
+                    ProductDetailsFragment fragment = ProductDetailsFragment.newInstance(item.getProduct());
+                    if (getActivity() instanceof MainActivity) {
+                        ((MainActivity) getActivity()).loadFragment(fragment, true);
+                    } else {
+                        getParentFragmentManager().beginTransaction()
+                                .replace(R.id.nav_host_fragment, fragment)
+                                .addToBackStack(null)
+                                .commit();
+                    }
+                }
             }
         });
         rvCart.setAdapter(adapter);

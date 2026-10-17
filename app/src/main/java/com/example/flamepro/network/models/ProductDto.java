@@ -61,6 +61,12 @@ public class ProductDto {
     @SerializedName("usage_guidelines")
     private String usageGuidelines;
 
+    @SerializedName("stock_quantity")
+    private int stockQuantity;
+
+    @SerializedName("gallery_images")
+    private List<String> galleryImages;
+
     public int getId() { return id; }
     public String getName() { return name; }
     public String getPrice() { return price; }
@@ -105,6 +111,9 @@ public class ProductDto {
                 inStock
         );
 
+        p.setId(id);
+        p.setStockQuantity(stockQuantity);
+
         // Map variants from backend: [{"label":"1kg","price":"₱ 1500.00"}, ...]
         if (variants != null && !variants.isEmpty()) {
             List<String> vWeights = new ArrayList<>();
@@ -130,6 +139,10 @@ public class ProductDto {
 
         if (usageGuidelines != null) {
             p.setUsageGuidelines(usageGuidelines);
+        }
+
+        if (galleryImages != null && !galleryImages.isEmpty()) {
+            p.setGalleryImages(galleryImages);
         }
 
         return p;

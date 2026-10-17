@@ -19,6 +19,7 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.ViewHolder> {
     public interface OnCartItemChangeListener {
         void onQuantityChanged(CartItem item, int newQuantity);
         void onRemoveItem(CartItem item);
+        void onItemClick(CartItem item);
     }
 
     public CartAdapter(List<CartItem> items, OnCartItemChangeListener listener) {
@@ -61,14 +62,45 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.ViewHolder> {
         holder.tvQuantity.setText(String.valueOf(item.getQuantity()));
         ImageLoader.load(holder.ivProduct, product.getImageUrl(), product.getImageResource());
 
-        // Checkbox logic
-        holder.cbItem.setImageResource(item.isSelected() ? R.drawable.custom_checked_circle : R.drawable.custom_unchecked_circle);
-        holder.cbItem.setOnClickListener(v -> {
-            item.setSelected(!item.isSelected());
+        // Item click logic - allows viewing product details
+        View.OnClickListener itemClickListener = v -> {
             if (listener != null) {
-                listener.onQuantityChanged(item, item.getQuantity()); // Using this to trigger UI update in Fragment
+                listener.onItemClick(item);
             }
-        });
+        };
+        holder.itemView.setOnClickListener(itemClickListener);
+        if (holder.clItemContainer != null) holder.clItemContainer.setOnClickListener(itemClickListener);
+        if (holder.cvProductImage != null) holder.cvProductImage.setOnClickListener(itemClickListener);
+        if (holder.ivProduct != null) holder.ivProduct.setOnClickListener(itemClickListener);
+        if (holder.tvName != null) holder.tvName.setOnClickListener(itemClickListener);
+        if (holder.tvVariant != null) holder.tvVariant.setOnClickListener(itemClickListener);
+        if (holder.tvPrice != null) holder.tvPrice.setOnClickListener(itemClickListener);
+
+        // Availability and Checkbox logic
+        boolean isAvailable = product.isInStock() && product.getStockQuantity() > 0;
+        if (!isAvailable) {
+            item.setSelected(false);
+            holder.itemView.setAlpha(0.45f);
+            holder.cbItem.setImageResource(R.drawable.custom_unchecked_circle);
+            if (holder.tvVariant != null) {
+                holder.tvVariant.setText("OUT OF STOCK - UNAVAILABLE");
+                holder.tvVariant.setVisibility(View.VISIBLE);
+            }
+            holder.cbItem.setOnClickListener(v -> {
+                android.widget.Toast.makeText(v.getContext(), 
+                        "'" + product.getName() + "' is out of stock and cannot be checked out.", 
+                        android.widget.Toast.LENGTH_SHORT).show();
+            });
+        } else {
+            holder.itemView.setAlpha(1.0f);
+            holder.cbItem.setImageResource(item.isSelected() ? R.drawable.custom_checked_circle : R.drawable.custom_unchecked_circle);
+            holder.cbItem.setOnClickListener(v -> {
+                item.setSelected(!item.isSelected());
+                if (listener != null) {
+                    listener.onQuantityChanged(item, item.getQuantity()); // Using this to trigger UI update in Fragment
+                }
+            });
+        }
 
         // Shop Header Checkbox logic
         boolean allSelected = true;
@@ -134,7 +166,7 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.ViewHolder> {
     public static class ViewHolder extends RecyclerView.ViewHolder {
         TextView tvName, tvPrice, tvQuantity, tvOriginalPrice, tvVariant, tvShopName;
         ImageView ivProduct, ivMinus, ivPlus, ivDelete, cbItem, cbShop;
-        View llShopHeader;
+        View llShopHeader, cvProductImage, clItemContainer;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -144,6 +176,8 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.ViewHolder> {
             tvOriginalPrice = itemView.findViewById(R.id.tvOriginalPrice);
             tvQuantity = itemView.findViewById(R.id.tvQuantity);
             ivProduct = itemView.findViewById(R.id.ivProduct);
+            cvProductImage = itemView.findViewById(R.id.cvProductImage);
+            clItemContainer = itemView.findViewById(R.id.clItemContainer);
             ivMinus = itemView.findViewById(R.id.ivMinus);
             ivPlus = itemView.findViewById(R.id.ivPlus);
             ivDelete = itemView.findViewById(R.id.ivDelete);

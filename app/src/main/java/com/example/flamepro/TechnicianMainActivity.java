@@ -51,8 +51,16 @@ public class TechnicianMainActivity extends AppCompatActivity {
             return insets;
         });
 
+        UserManager.getInstance().loadFromPreferences(this);
+
         initializeViews();
         setupRecyclerView();
+        loadAssignedServices();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
         loadAssignedServices();
     }
 
@@ -68,6 +76,14 @@ public class TechnicianMainActivity extends AppCompatActivity {
             techName = UserManager.getInstance().getEmailOrUsername();
         }
         tvTechName.setText("Tech: " + techName);
+
+        View btnTechRefresh = findViewById(R.id.btnTechRefresh);
+        if (btnTechRefresh != null) {
+            btnTechRefresh.setOnClickListener(v -> {
+                Toast.makeText(TechnicianMainActivity.this, "Refreshing services...", Toast.LENGTH_SHORT).show();
+                loadAssignedServices();
+            });
+        }
 
         findViewById(R.id.btnTechLogout).setOnClickListener(v -> {
             new AlertDialog.Builder(this)

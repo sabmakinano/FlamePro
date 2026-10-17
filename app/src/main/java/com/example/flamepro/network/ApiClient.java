@@ -9,7 +9,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 public class ApiClient {
     // Your PC's Wi-Fi IP address for testing on a physical phone:
-    public static final String DEFAULT_BASE_URL = "http://192.168.17.91/flamepro_api/";
+    public static final String DEFAULT_BASE_URL = "http://192.168.18.75/flamepro_api/";
 
     private static String currentBaseUrl = DEFAULT_BASE_URL;
     private static Retrofit retrofit = null;

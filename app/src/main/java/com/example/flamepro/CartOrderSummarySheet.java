@@ -4,7 +4,10 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.LinearLayout;
+import android.widget.Spinner;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -35,7 +38,8 @@ import retrofit2.Response;
  */
 public class CartOrderSummarySheet extends BottomSheetDialogFragment {
 
-    private static final double DELIVERY_FEE = 9.99;
+    private double deliveryFee = 100.0;
+    private double subtotal = 0.0;
 
     public static CartOrderSummarySheet newInstance() {
         return new CartOrderSummarySheet();
@@ -93,12 +97,13 @@ public class CartOrderSummarySheet extends BottomSheetDialogFragment {
         TextView tvSummaryTotal      = view.findViewById(R.id.tvSummaryTotal);
         MaterialButton btnConfirm    = view.findViewById(R.id.btnConfirmOrder);
         MaterialButton btnCancel     = view.findViewById(R.id.btnCancelSummary);
+        Spinner spnDeliveryArea      = view.findViewById(R.id.spnDeliveryArea);
 
         view.findViewById(R.id.btnBackSummary).setOnClickListener(v -> dismiss());
         btnCancel.setOnClickListener(v -> dismiss());
 
         // Build item rows dynamically
-        double subtotal = 0.0;
+        subtotal = 0.0;
         int totalQty = 0;
 
         for (CartItem ci : selectedItems) {
@@ -124,17 +129,45 @@ public class CartOrderSummarySheet extends BottomSheetDialogFragment {
             llItemsContainer.addView(itemRow);
         }
 
-        double total = subtotal + DELIVERY_FEE;
-
         tvSummaryItemCount.setText(totalQty + (totalQty == 1 ? " item" : " items"));
-        tvSummarySubtotal.setText(String.format(Locale.getDefault(), "₱ %.2f", subtotal));
-        tvSummaryDelivery.setText(String.format(Locale.getDefault(), "₱ %.2f", DELIVERY_FEE));
-        tvSummaryTotal.setText(String.format(Locale.getDefault(), "₱ %.2f", total));
 
-        String finalTotalStr = String.format(Locale.getDefault(), "₱ %.2f", total);
-        btnConfirm.setText("Confirm Order • " + finalTotalStr);
+        // Delivery Zones Spinner
+        if (spnDeliveryArea != null) {
+            String[] deliveryZones = {
+                    "Zone 1: Cebu City, Mandaue, Talisay (₱100)",
+                    "Zone 2: Lapu-Lapu, Consolacion, Minglanilla, Liloan (₱150)",
+                    "Zone 3: Naga, Compostela, San Fernando, Danao (₱180)",
+                    "Zone 4: Carcar, Carmen, Toledo, Balamban (₱220)",
+                    "Zone 5: North/South Cebu Province (Bogo, Argao, Barili) (₱260)"
+            };
+            ArrayAdapter<String> deliveryAdapter = new ArrayAdapter<>(
+                    requireContext(), android.R.layout.simple_spinner_item, deliveryZones);
+            deliveryAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            spnDeliveryArea.setAdapter(deliveryAdapter);
+
+            spnDeliveryArea.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+                @Override
+                public void onItemSelected(AdapterView<?> parent, View v, int position, long id) {
+                    if (position == 0) deliveryFee = 100.0;
+                    else if (position == 1) deliveryFee = 150.0;
+                    else if (position == 2) deliveryFee = 180.0;
+                    else if (position == 3) deliveryFee = 220.0;
+                    else if (position == 4) deliveryFee = 260.0;
+
+                    updatePriceUI(tvSummarySubtotal, tvSummaryDelivery, tvSummaryTotal, btnConfirm);
+                }
+
+                @Override
+                public void onNothingSelected(AdapterView<?> parent) {}
+            });
+        }
+
+        updatePriceUI(tvSummarySubtotal, tvSummaryDelivery, tvSummaryTotal, btnConfirm);
 
         btnConfirm.setOnClickListener(v -> {
+            double total = subtotal + deliveryFee;
+            String finalTotalStr = String.format(Locale.getDefault(), "₱ %.2f", total);
+
             // Save order
             String estDelivery = OrderSuccessFragment.calculateDeliveryDateString();
             TimeZone tz = TimeZone.getTimeZone("Asia/Manila");
@@ -157,7 +190,8 @@ public class CartOrderSummarySheet extends BottomSheetDialogFragment {
                 }
                 List<OrderRequest.OrderItemRequest> apiItems = new ArrayList<>();
                 for (CartItem ci : selectedItems) {
-                    apiItems.add(new OrderRequest.OrderItemRequest(null, ci.getProduct().getName(), ci.getQuantity(), ci.getProduct().getPrice()));
+                    Integer pId = ci.getProduct().getId() > 0 ? ci.getProduct().getId() : null;
+                    apiItems.add(new OrderRequest.OrderItemRequest(pId, ci.getProduct().getName(), ci.getQuantity(), ci.getProduct().getPrice()));
                 }
 
                 OrderRequest orderReq = new OrderRequest(userId > 0 ? userId : null, finalTotalStr, "Cash on Delivery", address, UserManager.getInstance().getFullName(), apiItems);
@@ -181,5 +215,22 @@ public class CartOrderSummarySheet extends BottomSheetDialogFragment {
                         OrderSuccessFragment.newInstance(finalTotalStr, estDelivery));
             }
         });
+    }
+
+    private void updatePriceUI(TextView tvSummarySubtotal, TextView tvSummaryDelivery,
+                               TextView tvSummaryTotal, MaterialButton btnConfirm) {
+        double total = subtotal + deliveryFee;
+        if (tvSummarySubtotal != null) {
+            tvSummarySubtotal.setText(String.format(Locale.getDefault(), "₱ %.2f", subtotal));
+        }
+        if (tvSummaryDelivery != null) {
+            tvSummaryDelivery.setText(String.format(Locale.getDefault(), "₱ %.2f", deliveryFee));
+        }
+        if (tvSummaryTotal != null) {
+            tvSummaryTotal.setText(String.format(Locale.getDefault(), "₱ %.2f", total));
+        }
+        if (btnConfirm != null) {
+            btnConfirm.setText("Confirm Order • " + String.format(Locale.getDefault(), "₱ %.2f", total));
+        }
     }
 }

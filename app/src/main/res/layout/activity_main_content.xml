@@ -189,9 +189,10 @@
                     android:gravity="center"
                     android:textColor="@color/black" />
                 <TextView
+                    android:id="@+id/tvStatTotalValue"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="4"
+                    android:text="0"
                     android:textStyle="bold"
                     android:textColor="@color/black"
                     tools:ignore="HardcodedText" />
@@ -212,9 +213,10 @@
                     android:textSize="12sp"
                     android:textColor="@color/black" />
                 <TextView
+                    android:id="@+id/tvStatPendingValue"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="1"
+                    android:text="0"
                     android:textStyle="bold"
                     android:textColor="@color/black"
                     tools:ignore="HardcodedText" />
@@ -235,9 +237,10 @@
                     android:textSize="12sp"
                     android:textColor="@color/black" />
                 <TextView
+                    android:id="@+id/tvStatTransitValue"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="1"
+                    android:text="0"
                     android:textStyle="bold"
                     android:textColor="@color/black"
                     tools:ignore="HardcodedText" />
@@ -258,9 +261,10 @@
                     android:textSize="12sp"
                     android:textColor="@color/black" />
                 <TextView
+                    android:id="@+id/tvStatDeliveredValue"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="2"
+                    android:text="0"
                     android:textStyle="bold"
                     android:textColor="@color/black"
                     tools:ignore="HardcodedText" />

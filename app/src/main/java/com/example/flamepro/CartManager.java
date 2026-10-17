@@ -49,6 +49,10 @@ public class CartManager {
         notifyListeners();
     }
 
+    public void clear() {
+        clearCart();
+    }
+
     public void updateQuantity(Product product, int quantity) {
         for (CartItem item : cartItems) {
             if (item.getProduct().getName().equals(product.getName())) {

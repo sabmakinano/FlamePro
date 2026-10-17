@@ -9,6 +9,14 @@ public class SimpleStatusResponse {
     @SerializedName("message")
     private String message;
 
+    @SerializedName("otp")
+    private String otp;
+
+    @SerializedName("email_sent")
+    private Boolean emailSent;
+
     public boolean isSuccess() { return success; }
     public String getMessage() { return message; }
+    public String getOtp() { return otp; }
+    public Boolean isEmailSent() { return emailSent != null && emailSent; }
 }

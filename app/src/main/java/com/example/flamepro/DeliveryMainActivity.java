@@ -51,8 +51,16 @@ public class DeliveryMainActivity extends AppCompatActivity {
             return insets;
         });
 
+        UserManager.getInstance().loadFromPreferences(this);
+
         initializeViews();
         setupRecyclerView();
+        loadAssignedOrders();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
         loadAssignedOrders();
     }
 
@@ -69,6 +77,14 @@ public class DeliveryMainActivity extends AppCompatActivity {
         }
         tvRiderName.setText("Rider: " + riderName);
 
+        View btnRefresh = findViewById(R.id.btnRefresh);
+        if (btnRefresh != null) {
+            btnRefresh.setOnClickListener(v -> {
+                Toast.makeText(DeliveryMainActivity.this, "Refreshing deliveries...", Toast.LENGTH_SHORT).show();
+                loadAssignedOrders();
+            });
+        }
+
         findViewById(R.id.btnLogout).setOnClickListener(v -> {
             new AlertDialog.Builder(this)
                     .setTitle("Logout")
@@ -84,9 +100,21 @@ public class DeliveryMainActivity extends AppCompatActivity {
         });
     }
 
+    private int deliveredCountToday = 0;
+
     private void setupRecyclerView() {
         rvDeliveryOrders.setLayoutManager(new LinearLayoutManager(this));
-        adapter = new DeliveryOrderAdapter(orderList, this::showConfirmDeliveredDialog);
+        adapter = new DeliveryOrderAdapter(orderList, new DeliveryOrderAdapter.OnDeliveryActionListener() {
+            @Override
+            public void onMarkDelivered(DeliveryOrderDto order) {
+                showConfirmDeliveredDialog(order);
+            }
+
+            @Override
+            public void onReschedule(DeliveryOrderDto order) {
+                showConfirmRescheduleDialog(order);
+            }
+        });
         rvDeliveryOrders.setAdapter(adapter);
     }
 
@@ -97,7 +125,14 @@ public class DeliveryMainActivity extends AppCompatActivity {
             public void onResponse(Call<DeliveryOrdersResponse> call, Response<DeliveryOrdersResponse> response) {
                 if (response.isSuccessful() && response.body() != null && response.body().getOrders() != null) {
                     orderList.clear();
-                    orderList.addAll(response.body().getOrders());
+                    deliveredCountToday = 0;
+                    for (DeliveryOrderDto o : response.body().getOrders()) {
+                        if ("Delivered".equalsIgnoreCase(o.getStatus())) {
+                            deliveredCountToday++;
+                        } else {
+                            orderList.add(o);
+                        }
+                    }
                     adapter.notifyDataSetChanged();
                     updateCounters();
                 } else {
@@ -114,17 +149,8 @@ public class DeliveryMainActivity extends AppCompatActivity {
     }
 
     private void updateCounters() {
-        int active = 0;
-        int delivered = 0;
-        for (DeliveryOrderDto order : orderList) {
-            if ("Delivered".equalsIgnoreCase(order.getStatus())) {
-                delivered++;
-            } else {
-                active++;
-            }
-        }
-        tvActiveCount.setText(String.valueOf(active));
-        tvDeliveredCount.setText(String.valueOf(delivered));
+        tvActiveCount.setText(String.valueOf(orderList.size()));
+        tvDeliveredCount.setText(String.valueOf(deliveredCountToday));
         layoutEmptyState.setVisibility(orderList.isEmpty() ? View.VISIBLE : View.GONE);
     }
 
@@ -137,17 +163,53 @@ public class DeliveryMainActivity extends AppCompatActivity {
                 .show();
     }
 
+    private void showConfirmRescheduleDialog(DeliveryOrderDto order) {
+        new AlertDialog.Builder(this)
+                .setTitle("Reschedule Delivery")
+                .setMessage("No one received Order #" + order.getOrderNumber() + "? It will be automatically rescheduled for tomorrow.")
+                .setPositiveButton("Reschedule for Tomorrow", (dialog, which) -> markOrderRescheduled(order))
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
     private void markOrderDelivered(DeliveryOrderDto order) {
         Map<String, Object> body = new HashMap<>();
         body.put("order_id", order.getId());
         body.put("status", "Delivered");
+        body.put("rider_id", UserManager.getInstance().getUserId());
 
         ApiClient.getApiService().updateDeliveryStatus(body).enqueue(new Callback<SimpleStatusResponse>() {
             @Override
             public void onResponse(Call<SimpleStatusResponse> call, Response<SimpleStatusResponse> response) {
                 if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
                     Toast.makeText(DeliveryMainActivity.this, "Order marked as Delivered & Cash Collected!", Toast.LENGTH_SHORT).show();
-                    order.setStatus("Delivered");
+                    orderList.remove(order);
+                    deliveredCountToday++;
+                    adapter.notifyDataSetChanged();
+                    updateCounters();
+                } else {
+                    Toast.makeText(DeliveryMainActivity.this, "Failed to update order status.", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<SimpleStatusResponse> call, Throwable t) {
+                Toast.makeText(DeliveryMainActivity.this, "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void markOrderRescheduled(DeliveryOrderDto order) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("order_id", order.getId());
+        body.put("status", "Attempted - Rescheduled");
+
+        ApiClient.getApiService().updateDeliveryStatus(body).enqueue(new Callback<SimpleStatusResponse>() {
+            @Override
+            public void onResponse(Call<SimpleStatusResponse> call, Response<SimpleStatusResponse> response) {
+                if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
+                    Toast.makeText(DeliveryMainActivity.this, "Order rescheduled for tomorrow.", Toast.LENGTH_SHORT).show();
+                    order.setStatus("Attempted - Rescheduled");
                     adapter.notifyDataSetChanged();
                     updateCounters();
                 } else {

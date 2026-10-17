@@ -99,9 +99,11 @@ public class CheckoutBottomSheet extends BottomSheetDialogFragment {
 
         android.widget.Spinner spnDeliveryArea = view.findViewById(R.id.spnDeliveryArea);
         String[] deliveryZones = {
-                "Zone 1: Metro Cebu (₱100)",
-                "Zone 2: Greater Cebu (₱150)",
-                "Zone 3: Provincial Cebu (₱200)"
+                "Zone 1: Cebu City, Mandaue, Talisay (₱100)",
+                "Zone 2: Lapu-Lapu, Consolacion, Minglanilla, Liloan (₱150)",
+                "Zone 3: Naga, Compostela, San Fernando, Danao (₱180)",
+                "Zone 4: Carcar, Carmen, Toledo, Balamban (₱220)",
+                "Zone 5: North/South Cebu Province (Bogo, Argao, Barili) (₱260)"
         };
         android.widget.ArrayAdapter<String> deliveryAdapter = new android.widget.ArrayAdapter<>(
                 requireContext(), android.R.layout.simple_spinner_item, deliveryZones);
@@ -113,7 +115,9 @@ public class CheckoutBottomSheet extends BottomSheetDialogFragment {
             public void onItemSelected(android.widget.AdapterView<?> parent, View v, int position, long id) {
                 if (position == 0) deliveryFee = 100.0;
                 else if (position == 1) deliveryFee = 150.0;
-                else if (position == 2) deliveryFee = 200.0;
+                else if (position == 2) deliveryFee = 180.0;
+                else if (position == 3) deliveryFee = 220.0;
+                else if (position == 4) deliveryFee = 260.0;
                 
                 updatePriceUI(tvQty, tvPrice, tvSubtotal, tvTotal, btnPlaceOrder, tvItemCount);
             }
@@ -197,7 +201,8 @@ public class CheckoutBottomSheet extends BottomSheetDialogFragment {
                     customerName = "Guest";
                 }
                 List<OrderRequest.OrderItemRequest> apiItems = new ArrayList<>();
-                apiItems.add(new OrderRequest.OrderItemRequest(null, product.getName(), quantity, product.getPrice()));
+                Integer pId = product.getId() > 0 ? product.getId() : null;
+                apiItems.add(new OrderRequest.OrderItemRequest(pId, product.getName(), quantity, product.getPrice()));
 
                 OrderRequest orderReq = new OrderRequest(userId > 0 ? userId : null, totalStr, "Cash on Delivery", address, customerName, apiItems);
                 ApiClient.getApiService().createOrder(orderReq).enqueue(new Callback<OrderResponse>() {

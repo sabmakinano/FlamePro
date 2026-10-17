@@ -3,6 +3,7 @@
 session_start();
 header('Content-Type: text/html; charset=UTF-8');
 require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/../helpers/audit_helper.php';
 
 if (!isset($_SESSION['portal_user'])) {
     header('Location: index.php');

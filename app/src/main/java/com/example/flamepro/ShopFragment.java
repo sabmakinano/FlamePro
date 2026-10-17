@@ -10,25 +10,43 @@ import android.view.animation.AccelerateInterpolator;
 import android.view.animation.OvershootInterpolator;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.PopupMenu;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.RecyclerView;
+import com.example.flamepro.network.ApiClient;
+import com.example.flamepro.network.models.ProductDto;
+import com.example.flamepro.network.models.ProductListResponse;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class ShopFragment extends Fragment {
 
+    private enum ShopMode { PRODUCTS, SERVICES }
+    private ShopMode currentMode = ShopMode.PRODUCTS;
+
     private RecyclerView rvProducts;
+    private RecyclerView rvServicesShop;
     private View notificationLayout;
     private ImageView ivFilter;
     private EditText etSearch;
+    private TextView tvShopSubtitle;
+    private View hsvCategoryChips;
+    private TextView btnToggleProducts;
+    private TextView btnToggleServices;
     private View rootView;
+
     private ProductAdapter adapter;
+    private ShopServiceAdapter servicesAdapter;
     private final List<Product> allProductsList = new ArrayList<>();
+    private final List<ShopServiceItem> allServicesList = new ArrayList<>();
 
     @Nullable
     @Override
@@ -42,14 +60,117 @@ public class ShopFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         rvProducts = view.findViewById(R.id.rvProducts);
+        rvServicesShop = view.findViewById(R.id.rvServicesShop);
         notificationLayout = view.findViewById(R.id.notificationLayout);
         ivFilter = view.findViewById(R.id.ivFilter);
         etSearch = view.findViewById(R.id.etSearch);
+        tvShopSubtitle = view.findViewById(R.id.tvShopSubtitle);
+        hsvCategoryChips = view.findViewById(R.id.hsvCategoryChips);
+        btnToggleProducts = view.findViewById(R.id.btnToggleProducts);
+        btnToggleServices = view.findViewById(R.id.btnToggleServices);
 
+        setupToggle();
+        setupServices();
         setupProducts();
         setupNotifications();
         setupFilter();
         setupSearch();
+        setupCategoryChips(view);
+    }
+
+    private void setupToggle() {
+        if (btnToggleProducts != null) {
+            btnToggleProducts.setOnClickListener(v -> setShopMode(ShopMode.PRODUCTS));
+        }
+        if (btnToggleServices != null) {
+            btnToggleServices.setOnClickListener(v -> setShopMode(ShopMode.SERVICES));
+        }
+    }
+
+    private void setShopMode(ShopMode mode) {
+        currentMode = mode;
+        if (mode == ShopMode.PRODUCTS) {
+            btnToggleProducts.setBackgroundResource(R.drawable.shop_toggle_selected_bg);
+            btnToggleProducts.setTextColor(getResources().getColor(R.color.brand_red, null));
+            btnToggleServices.setBackgroundResource(android.R.color.transparent);
+            btnToggleServices.setTextColor(getResources().getColor(R.color.white, null));
+
+            if (tvShopSubtitle != null) tvShopSubtitle.setText(R.string.fire_safety_products);
+            if (hsvCategoryChips != null) hsvCategoryChips.setVisibility(View.VISIBLE);
+            if (rvProducts != null) rvProducts.setVisibility(View.VISIBLE);
+            if (rvServicesShop != null) rvServicesShop.setVisibility(View.GONE);
+            if (ivFilter != null) ivFilter.setVisibility(View.VISIBLE);
+            if (etSearch != null) {
+                etSearch.setHint(R.string.search_hint);
+                filterProducts(etSearch.getText().toString());
+            }
+        } else {
+            btnToggleServices.setBackgroundResource(R.drawable.shop_toggle_selected_bg);
+            btnToggleServices.setTextColor(getResources().getColor(R.color.brand_red, null));
+            btnToggleProducts.setBackgroundResource(android.R.color.transparent);
+            btnToggleProducts.setTextColor(getResources().getColor(R.color.white, null));
+
+            if (tvShopSubtitle != null) tvShopSubtitle.setText("Fire Safety & Maintenance Services");
+            // Exclude extinguisher and sprinkler product category chips & items
+            if (hsvCategoryChips != null) hsvCategoryChips.setVisibility(View.GONE);
+            if (rvProducts != null) rvProducts.setVisibility(View.GONE);
+            if (rvServicesShop != null) rvServicesShop.setVisibility(View.VISIBLE);
+            if (ivFilter != null) ivFilter.setVisibility(View.GONE);
+            if (etSearch != null) {
+                etSearch.setHint("Search fire safety services...");
+                filterServices(etSearch.getText().toString());
+            }
+        }
+    }
+
+    private void setupServices() {
+        allServicesList.clear();
+        // 4 confirmed services
+        allServicesList.add(new ShopServiceItem(
+                "1",
+                "Extinguisher Refilling",
+                "Refilling",
+                "Fire Extinguisher Refilling & Maintenance",
+                "Certified refilling and pressure maintenance for all extinguisher types.",
+                R.drawable.ic_cat_powder,
+                "Refilling"
+        ));
+        allServicesList.add(new ShopServiceItem(
+                "2",
+                "System Installation",
+                "Installation",
+                "Fire Protection & Sprinkler Installation",
+                "Professional installation of fire sprinkler, alarm, and detection systems.",
+                R.drawable.ic_coverage,
+                "Installation"
+        ));
+        allServicesList.add(new ShopServiceItem(
+                "3",
+                "Safety Inspection",
+                "Inspection",
+                "Fire Safety Inspection & Assessment",
+                "Comprehensive fire safety assessment and compliance certification.",
+                R.drawable.ic_check_circle,
+                "Inspection"
+        ));
+        allServicesList.add(new ShopServiceItem(
+                "4",
+                "On-site Safety Training",
+                "Safety Training",
+                "On-site Safety Training / Demo",
+                "Live fire drills, extinguisher handling, and emergency response training.",
+                R.drawable.ic_fire_type,
+                "Training / Demo"
+        ));
+
+        servicesAdapter = new ShopServiceAdapter(allServicesList, service -> {
+            ServiceRequestSheet.newInstance(service.getRequestServiceType())
+                    .show(getParentFragmentManager(), "service_request");
+        });
+
+        if (rvServicesShop != null) {
+            rvServicesShop.setAdapter(servicesAdapter);
+        }
     }
 
     private void setupSearch() {
@@ -60,7 +181,11 @@ public class ShopFragment extends Fragment {
 
                 @Override
                 public void onTextChanged(CharSequence s, int start, int before, int count) {
-                    filter(s.toString());
+                    if (currentMode == ShopMode.PRODUCTS) {
+                        filterProducts(s.toString());
+                    } else {
+                        filterServices(s.toString());
+                    }
                 }
 
                 @Override
@@ -69,10 +194,11 @@ public class ShopFragment extends Fragment {
         }
     }
 
-    private void filter(String query) {
+    private void filterProducts(String query) {
         List<Product> filteredList = new ArrayList<>();
+        String q = query.toLowerCase(Locale.ROOT).trim();
         for (Product product : allProductsList) {
-            if (product.getName().toLowerCase(Locale.ROOT).contains(query.toLowerCase(Locale.ROOT))) {
+            if (q.isEmpty() || product.getName().toLowerCase(Locale.ROOT).contains(q)) {
                 filteredList.add(product);
             }
         }
@@ -81,17 +207,100 @@ public class ShopFragment extends Fragment {
         }
     }
 
+    private void filterServices(String query) {
+        List<ShopServiceItem> filteredList = new ArrayList<>();
+        String q = query.toLowerCase(Locale.ROOT).trim();
+        for (ShopServiceItem item : allServicesList) {
+            if (q.isEmpty() || item.getTitle().toLowerCase(Locale.ROOT).contains(q)
+                    || item.getSubtitle().toLowerCase(Locale.ROOT).contains(q)
+                    || item.getDescription().toLowerCase(Locale.ROOT).contains(q)) {
+                filteredList.add(item);
+            }
+        }
+        if (servicesAdapter != null) {
+            servicesAdapter.updateList(filteredList);
+        }
+    }
+
+    private void setupCategoryChips(View view) {
+        TextView chipAll = view.findViewById(R.id.chipAll);
+        TextView chipExtinguishers = view.findViewById(R.id.chipExtinguishers);
+        TextView chipSprinklers = view.findViewById(R.id.chipSprinklers);
+        TextView chipServices = view.findViewById(R.id.chipServices);
+
+        if (chipAll == null) return;
+
+        Runnable resetChips = () -> {
+            chipAll.setBackgroundResource(R.drawable.chip_unselected_bg);
+            chipAll.setTextColor(getResources().getColor(R.color.black, null));
+            chipExtinguishers.setBackgroundResource(R.drawable.chip_unselected_bg);
+            chipExtinguishers.setTextColor(getResources().getColor(R.color.black, null));
+            chipSprinklers.setBackgroundResource(R.drawable.chip_unselected_bg);
+            chipSprinklers.setTextColor(getResources().getColor(R.color.black, null));
+            chipServices.setBackgroundResource(R.drawable.chip_unselected_bg);
+            chipServices.setTextColor(getResources().getColor(R.color.brand_red, null));
+        };
+
+        chipAll.setOnClickListener(v -> {
+            resetChips.run();
+            chipAll.setBackgroundResource(R.drawable.chip_selected_bg);
+            chipAll.setTextColor(getResources().getColor(R.color.white, null));
+            if (adapter != null) adapter.updateList(new ArrayList<>(allProductsList));
+        });
+
+        chipExtinguishers.setOnClickListener(v -> {
+            resetChips.run();
+            chipExtinguishers.setBackgroundResource(R.drawable.chip_selected_bg);
+            chipExtinguishers.setTextColor(getResources().getColor(R.color.white, null));
+            filterByCategory("Extinguish");
+        });
+
+        chipSprinklers.setOnClickListener(v -> {
+            resetChips.run();
+            chipSprinklers.setBackgroundResource(R.drawable.chip_selected_bg);
+            chipSprinklers.setTextColor(getResources().getColor(R.color.white, null));
+            filterByCategory("Sprinkler");
+        });
+
+        chipServices.setOnClickListener(v -> {
+            // Smoothly switch toggle to Services mode
+            setShopMode(ShopMode.SERVICES);
+        });
+    }
+
+    private void filterByCategory(String keyword) {
+        List<Product> filtered = new ArrayList<>();
+        for (Product p : allProductsList) {
+            String cat = p.getCategoryTag() != null ? p.getCategoryTag() : "";
+            String name = p.getName() != null ? p.getName() : "";
+            if (cat.toLowerCase(Locale.ROOT).contains(keyword.toLowerCase(Locale.ROOT)) ||
+                name.toLowerCase(Locale.ROOT).contains(keyword.toLowerCase(Locale.ROOT))) {
+                filtered.add(p);
+            }
+        }
+        if (adapter != null) adapter.updateList(filtered);
+    }
+
     private void setupFilter() {
         if (ivFilter != null) {
             ivFilter.setOnClickListener(v -> {
                 PopupMenu popup = new PopupMenu(requireContext(), v);
+                popup.getMenu().add("All Products");
                 popup.getMenu().add(getString(R.string.cat_fire_extinguishers));
                 popup.getMenu().add(getString(R.string.cat_fire_sprinklers));
                 popup.getMenu().add(getString(R.string.cat_fireman_equipments));
                 popup.getMenu().add(getString(R.string.cat_fire_hose));
+                popup.getMenu().add("🛠️ Services");
 
                 popup.setOnMenuItemClickListener(item -> {
-                    Toast.makeText(getContext(), "Category: " + item.getTitle(), Toast.LENGTH_SHORT).show();
+                    String title = item.getTitle().toString();
+                    if (title.contains("Services")) {
+                        setShopMode(ShopMode.SERVICES);
+                    } else if (title.equals("All Products")) {
+                        if (adapter != null) adapter.updateList(new ArrayList<>(allProductsList));
+                    } else {
+                        filterByCategory(title);
+                    }
                     return true;
                 });
                 popup.show();
@@ -106,13 +315,57 @@ public class ShopFragment extends Fragment {
         }
     }
 
-
-
     private void setupProducts() {
         allProductsList.clear();
+
+        adapter = new ProductAdapter(new ArrayList<>(), product -> {
+            CartManager.getInstance().addProduct(product.copy(), 1);
+            performCartAnimation(rootView.findViewById(R.id.flCartAnim));
+        }, product -> {
+            CheckoutBottomSheet.newInstance(product.copy()).show(getParentFragmentManager(), "checkout");
+        }, product -> {
+            getParentFragmentManager().beginTransaction()
+                    .replace(R.id.nav_host_fragment, ProductDetailsFragment.newInstance(product.copy()))
+                    .addToBackStack(null)
+                    .commit();
+        });
+        rvProducts.setAdapter(adapter);
+
+        // Fetch live products from PostgreSQL backend (prioritizing API over fallback)
+        fetchProductsFromBackend();
+    }
+
+    private void fetchProductsFromBackend() {
+        ApiClient.getApiService().getProducts(null, null)
+                .enqueue(new Callback<ProductListResponse>() {
+                    @Override
+                    public void onResponse(@NonNull Call<ProductListResponse> call,
+                                           @NonNull Response<ProductListResponse> response) {
+                        if (response.isSuccessful() && response.body() != null && response.body().getProducts() != null) {
+                            List<ProductDto> dtos = response.body().getProducts();
+                            allProductsList.clear();
+                            for (ProductDto dto : dtos) {
+                                allProductsList.add(dto.toProduct());
+                            }
+                            if (adapter != null) {
+                                adapter.updateList(new ArrayList<>(allProductsList));
+                            }
+                        } else {
+                            loadOfflineFallbackProducts();
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(@NonNull Call<ProductListResponse> call, @NonNull Throwable t) {
+                        // Offline or server not reachable; only then use filtered fallback
+                        loadOfflineFallbackProducts();
+                    }
+                });
+    }
+
+    private void loadOfflineFallbackProducts() {
+        allProductsList.clear();
         List<Integer> carousel = new ArrayList<>();
-        carousel.add(R.drawable.logo);
-        carousel.add(R.drawable.logo);
         carousel.add(R.drawable.logo);
 
         List<String> features = new ArrayList<>();
@@ -120,12 +373,11 @@ public class ShopFragment extends Fragment {
         features.add("Standard Safety Compliance");
         features.add("1-Year Warranty");
 
-        // Adding 20 different products
         Product hfc = new Product("HFC236FA GREEN FIRE EXTINGUISHER", "₱ 1500.00", "₱ 1800.00", "15% OFF", 4.9f, 42, R.drawable.logo, carousel, "1kg", "HFC236FA", "10-15 ft", features, "Fire Extinguishers", true);
         hfc.setVariantWeights(java.util.Arrays.asList("1kg", "2.5kg", "5kg", "9kg", "25kg"));
         hfc.setVariantPrices(java.util.Arrays.asList("₱ 1500.00", "₱ 2800.00", "₱ 4500.00", "₱ 7500.00", "₱ 18000.00"));
         allProductsList.add(hfc);
-        
+
         allProductsList.add(new Product("ABC Dry Powder 5 lb", "₱ 45.00", "₱ 55.00", "18% OFF", 4.8f, 24, R.drawable.logo, carousel, "5 lb", "Dry Powder", "10-15 ft", features, "Fire Extinguishers", true));
         allProductsList.add(new Product("CO2 Extinguisher 10 lb", "₱ 89.99", "₱ 110.00", "18% OFF", 4.7f, 15, R.drawable.logo, carousel, "10 lb", "CO2", "8-12 ft", features, "Fire Extinguishers", true));
         allProductsList.add(new Product("Foam Extinguisher 9 L", "₱ 59.50", "₱ 75.00", "20% OFF", 4.5f, 10, R.drawable.logo, carousel, "9L", "Foam", "12-18 ft", features, "Fire Extinguishers", true));
@@ -147,48 +399,9 @@ public class ShopFragment extends Fragment {
         allProductsList.add(new Product("Fire Whistle", "₱ 5.99", "₱ 10.00", "40% OFF", 4.0f, 80, R.drawable.logo, carousel, "0.1 lb", "Alert", "Audible", features, "Fireman Equipments", true));
         allProductsList.add(new Product("Gas Mask (Single Filter)", "₱ 95.00", "₱ 120.00", "20% OFF", 4.8f, 11, R.drawable.logo, carousel, "2 lb", "Air Purifying", "Head", features, "Fireman Equipments", true));
 
-        adapter = new ProductAdapter(new ArrayList<>(allProductsList), product -> {
-            CartManager.getInstance().addProduct(product.copy(), 1);
-            performCartAnimation(rootView.findViewById(R.id.flCartAnim));
-        }, product -> {
-            CheckoutBottomSheet.newInstance(product.copy()).show(getParentFragmentManager(), "checkout");
-        }, product -> {
-            getParentFragmentManager().beginTransaction()
-                    .replace(R.id.nav_host_fragment, ProductDetailsFragment.newInstance(product.copy()))
-                    .addToBackStack(null)
-                    .commit();
-        });
-        rvProducts.setAdapter(adapter);
-
-        // Fetch dynamic products from PostgreSQL backend
-        fetchProductsFromBackend();
-    }
-
-    private void fetchProductsFromBackend() {
-        com.example.flamepro.network.ApiClient.getApiService().getProducts(null, null)
-                .enqueue(new retrofit2.Callback<com.example.flamepro.network.models.ProductListResponse>() {
-                    @Override
-                    public void onResponse(retrofit2.Call<com.example.flamepro.network.models.ProductListResponse> call,
-                                           retrofit2.Response<com.example.flamepro.network.models.ProductListResponse> response) {
-                        if (response.isSuccessful() && response.body() != null && response.body().getProducts() != null) {
-                            List<com.example.flamepro.network.models.ProductDto> dtos = response.body().getProducts();
-                            if (!dtos.isEmpty()) {
-                                allProductsList.clear();
-                                for (com.example.flamepro.network.models.ProductDto dto : dtos) {
-                                    allProductsList.add(dto.toProduct());
-                                }
-                                if (adapter != null) {
-                                    adapter.updateList(new ArrayList<>(allProductsList));
-                                }
-                            }
-                        }
-                    }
-
-                    @Override
-                    public void onFailure(retrofit2.Call<com.example.flamepro.network.models.ProductListResponse> call, Throwable t) {
-                        // Offline or server not reachable yet; fallback local products are kept
-                    }
-                });
+        if (adapter != null) {
+            adapter.updateList(new ArrayList<>(allProductsList));
+        }
     }
 
     private void performCartAnimation(View animView) {

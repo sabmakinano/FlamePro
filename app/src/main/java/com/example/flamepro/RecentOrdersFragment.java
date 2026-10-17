@@ -14,12 +14,14 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.RecyclerView;
+
+import java.util.ArrayList;
 import java.util.List;
 
 public class RecentOrdersFragment extends Fragment implements RecentOrdersAdapter.OnRecentOrderActionListener {
 
     private View flCartAnim;
-    private List<RecentOrderProduct> recentOrdersList;
+    private final List<RecentOrderProduct> recentOrdersList = new ArrayList<>();
     private RecentOrdersAdapter adapter;
     private TextView tvEmptyRecent;
     private RecyclerView rvRecentOrders;
@@ -42,11 +44,57 @@ public class RecentOrdersFragment extends Fragment implements RecentOrdersAdapte
         view.findViewById(R.id.btnDeleteAll).setOnClickListener(v -> showClearHistoryDialog());
 
         rvRecentOrders = view.findViewById(R.id.rvRecentOrders);
-        
-        recentOrdersList = OrderManager.getInstance().getRecentOrders();
         adapter = new RecentOrdersAdapter(recentOrdersList, this);
         rvRecentOrders.setAdapter(adapter);
-        updateEmptyState();
+
+        loadRecentOrders();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        loadRecentOrders();
+    }
+
+    private void loadRecentOrders() {
+        int userId = UserManager.getInstance().getUserId();
+        if (userId <= 0 && getContext() != null) {
+            UserManager.getInstance().loadFromPreferences(getContext());
+            userId = UserManager.getInstance().getUserId();
+        }
+
+        if (userId > 0) {
+            com.example.flamepro.network.ApiClient.getApiService().getUserOrders(userId)
+                    .enqueue(new retrofit2.Callback<com.example.flamepro.network.models.OrderListResponse>() {
+                        @Override
+                        public void onResponse(@NonNull retrofit2.Call<com.example.flamepro.network.models.OrderListResponse> call,
+                                               @NonNull retrofit2.Response<com.example.flamepro.network.models.OrderListResponse> response) {
+                            if (!isAdded()) return;
+                            if (response.isSuccessful() && response.body() != null && response.body().getOrders() != null) {
+                                OrderManager.getInstance().syncFromBackend(response.body().getOrders());
+                            }
+                            recentOrdersList.clear();
+                            recentOrdersList.addAll(OrderManager.getInstance().getRecentOrders());
+                            if (adapter != null) adapter.notifyDataSetChanged();
+                            updateEmptyState();
+                        }
+
+                        @Override
+                        public void onFailure(@NonNull retrofit2.Call<com.example.flamepro.network.models.OrderListResponse> call,
+                                              @NonNull Throwable t) {
+                            if (!isAdded()) return;
+                            recentOrdersList.clear();
+                            recentOrdersList.addAll(OrderManager.getInstance().getRecentOrders());
+                            if (adapter != null) adapter.notifyDataSetChanged();
+                            updateEmptyState();
+                        }
+                    });
+        } else {
+            recentOrdersList.clear();
+            recentOrdersList.addAll(OrderManager.getInstance().getRecentOrders());
+            if (adapter != null) adapter.notifyDataSetChanged();
+            updateEmptyState();
+        }
     }
 
     private void showClearHistoryDialog() {
@@ -62,6 +110,7 @@ public class RecentOrdersFragment extends Fragment implements RecentOrdersAdapte
                 .setMessage("Are you sure you want to delete all recent purchase history?")
                 .setPositiveButton("Delete All", (dialog, which) -> {
                     OrderManager.getInstance().clearRecentOrders();
+                    recentOrdersList.clear();
                     adapter.notifyDataSetChanged();
                     updateEmptyState();
                     Toast.makeText(getContext(), "History cleared", Toast.LENGTH_SHORT).show();
@@ -102,11 +151,14 @@ public class RecentOrdersFragment extends Fragment implements RecentOrdersAdapte
                 .setTitle("Remove Order")
                 .setMessage("Remove this item from your recent history?")
                 .setPositiveButton("Remove", (dialog, which) -> {
-                    OrderManager.getInstance().removeRecentOrder(position);
-                    adapter.notifyItemRemoved(position);
-                    adapter.notifyItemRangeChanged(position, adapter.getItemCount());
-                    updateEmptyState();
-                    Toast.makeText(getContext(), "Item removed", Toast.LENGTH_SHORT).show();
+                    if (position >= 0 && position < recentOrdersList.size()) {
+                        recentOrdersList.remove(position);
+                        OrderManager.getInstance().removeRecentOrder(position);
+                        adapter.notifyItemRemoved(position);
+                        adapter.notifyItemRangeChanged(position, adapter.getItemCount());
+                        updateEmptyState();
+                        Toast.makeText(getContext(), "Item removed", Toast.LENGTH_SHORT).show();
+                    }
                 })
                 .setNegativeButton("Cancel", null)
                 .show();

@@ -232,36 +232,6 @@
             app:layout_constraintTop_toBottomOf="@id/dividerLayout">
 
             <LinearLayout
-                android:id="@+id/btnFacebook"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:clickable="true"
-                android:focusable="true"
-                tools:ignore="UseCompoundDrawables">
-
-                <ImageView
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
-                    android:src="@drawable/ic_facebook"
-                    android:contentDescription="@string/facebook_logo" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/facebook"
-                    android:textSize="18sp"
-                    android:textColor="@color/black"
-                    android:textStyle="bold"
-                    android:layout_marginStart="8dp" />
-            </LinearLayout>
-
-            <Space
-                android:layout_width="48dp"
-                android:layout_height="wrap_content" />
-
-            <LinearLayout
                 android:id="@+id/btnGoogle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -269,11 +239,14 @@
                 android:gravity="center_vertical"
                 android:clickable="true"
                 android:focusable="true"
+                android:background="@drawable/edit_text_bg"
+                android:paddingHorizontal="24dp"
+                android:paddingVertical="12dp"
                 tools:ignore="UseCompoundDrawables">
 
                 <ImageView
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
                     android:src="@drawable/ic_google"
                     android:contentDescription="@string/google_logo" />
 
@@ -281,10 +254,10 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/google"
-                    android:textSize="18sp"
+                    android:textSize="16sp"
                     android:textColor="@color/black"
                     android:textStyle="bold"
-                    android:layout_marginStart="8dp" />
+                    android:layout_marginStart="10dp" />
             </LinearLayout>
         </LinearLayout>
 

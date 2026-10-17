@@ -13,14 +13,24 @@ public class ImageCarouselAdapter extends RecyclerView.Adapter<ImageCarouselAdap
 
     private List<Integer> images;
     private String imageUrl;
+    private List<String> galleryImages;
 
     public ImageCarouselAdapter(List<Integer> images) {
-        this(images, null);
+        this(images, null, null);
     }
 
     public ImageCarouselAdapter(List<Integer> images, String imageUrl) {
+        this(images, imageUrl, null);
+    }
+
+    public ImageCarouselAdapter(List<Integer> images, String imageUrl, List<String> galleryImages) {
         this.images = images != null ? images : new ArrayList<>();
         this.imageUrl = imageUrl;
+        this.galleryImages = galleryImages != null ? galleryImages : new ArrayList<>();
+        // If galleryImages is empty but imageUrl is present, add imageUrl to galleryImages
+        if (this.galleryImages.isEmpty() && imageUrl != null && !imageUrl.trim().isEmpty()) {
+            this.galleryImages.add(imageUrl);
+        }
     }
 
     @NonNull
@@ -32,9 +42,10 @@ public class ImageCarouselAdapter extends RecyclerView.Adapter<ImageCarouselAdap
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        if (imageUrl != null && !imageUrl.trim().isEmpty() && position == 0) {
-            int placeholder = images.isEmpty() ? R.drawable.logo : images.get(0);
-            ImageLoader.load(holder.imageView, imageUrl, placeholder);
+        if (!galleryImages.isEmpty() && position < galleryImages.size()) {
+            String url = galleryImages.get(position);
+            int placeholder = !images.isEmpty() ? images.get(Math.min(position, images.size() - 1)) : R.drawable.logo;
+            ImageLoader.load(holder.imageView, url, placeholder);
         } else if (position < images.size()) {
             holder.imageView.setImageResource(images.get(position));
         } else {
@@ -44,6 +55,9 @@ public class ImageCarouselAdapter extends RecyclerView.Adapter<ImageCarouselAdap
 
     @Override
     public int getItemCount() {
+        if (!galleryImages.isEmpty()) {
+            return galleryImages.size();
+        }
         if (imageUrl != null && !imageUrl.trim().isEmpty()) {
             return Math.max(1, images.size());
         }

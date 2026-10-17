@@ -253,139 +253,62 @@
             </LinearLayout>
         </LinearLayout>
 
-        <!-- Status Shipping Grid Box -->
-        <LinearLayout
-            android:id="@+id/clShippingGridBox"
+        <!-- My Fire Safety Equipment Tracker -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/btnEquipmentTracker"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:background="@drawable/profile_card_border"
-            android:paddingVertical="20dp"
-            android:orientation="horizontal"
-            android:weightSum="5"
+            android:clickable="true"
+            android:focusable="true"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="2dp"
+            app:cardBackgroundColor="#FFF5F5"
             app:layout_constraintTop_toBottomOf="@id/clCountersBox">
 
-                <LinearLayout
-                    android:id="@+id/btnToPay"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical"
-                    android:gravity="center"
-                    android:clickable="true"
-                    android:focusable="true">
-                    <ImageView
-                        android:layout_width="32dp"
-                        android:layout_height="32dp"
-                        android:src="@drawable/custom_unchecked_circle"
-                        app:tint="@color/black" />
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:text="To Pay"
-                        android:textColor="@color/black"
-                        android:textSize="13sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:padding="16dp">
+
+                <ImageView
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:src="@drawable/ic_flamepro_logo" />
 
                 <LinearLayout
-                    android:id="@+id/btnToShip"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:orientation="vertical"
-                    android:gravity="center"
-                    android:clickable="true"
-                    android:focusable="true">
-                    <ImageView
-                        android:layout_width="32dp"
-                        android:layout_height="32dp"
-                        android:src="@drawable/nav_shop"
-                        app:tint="@color/black" />
+                    android:layout_marginStart="12dp"
+                    android:orientation="vertical">
+
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:text="To Ship"
+                        android:text="My Equipment &amp; Refill Tracker"
                         android:textColor="@color/black"
-                        android:textSize="13sp"
+                        android:textSize="15sp"
                         android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="View expiration dates &amp; request 1-year refills"
+                        android:textColor="@color/text_gray"
+                        android:textSize="12sp" />
                 </LinearLayout>
 
-                <LinearLayout
-                    android:id="@+id/btnToReceive"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical"
-                    android:gravity="center"
-                    android:clickable="true"
-                    android:focusable="true">
-                    <ImageView
-                        android:layout_width="32dp"
-                        android:layout_height="32dp"
-                        android:src="@drawable/ic_delivery"
-                        app:tint="@color/black" />
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:text="To Receive"
-                        android:textColor="@color/black"
-                        android:textSize="13sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
-
-                <LinearLayout
-                    android:id="@+id/btnToReview"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical"
-                    android:gravity="center"
-                    android:clickable="true"
-                    android:focusable="true">
-                    <ImageView
-                        android:layout_width="32dp"
-                        android:layout_height="32dp"
-                        android:src="@drawable/ic_check_circle"
-                        app:tint="@color/black" />
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:text="To Review"
-                        android:textColor="@color/black"
-                        android:textSize="13sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
-
-                <LinearLayout
-                    android:id="@+id/btnReturns"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical"
-                    android:gravity="center"
-                    android:clickable="true"
-                    android:focusable="true">
-                    <ImageView
-                        android:layout_width="32dp"
-                        android:layout_height="32dp"
-                        android:src="@drawable/ic_success_rays"
-                        app:tint="@color/black" />
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:text="Returns"
-                        android:textColor="@color/black"
-                        android:textSize="13sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:rotation="180"
+                    android:src="@drawable/ic_back"
+                    app:tint="@color/brand_red" />
             </LinearLayout>
-        <!-- Status Shipping Grid Box Ends -->
+        </androidx.cardview.widget.CardView>
 
         <!-- Notifications Box Toggles -->
         <androidx.constraintlayout.widget.ConstraintLayout
@@ -395,7 +318,7 @@
             android:layout_marginTop="16dp"
             android:background="@drawable/profile_card_border"
             android:padding="16dp"
-            app:layout_constraintTop_toBottomOf="@id/clShippingGridBox">
+            app:layout_constraintTop_toBottomOf="@id/btnEquipmentTracker">
 
             <TextView
                 android:id="@+id/tvNotificationHeaderLabel"

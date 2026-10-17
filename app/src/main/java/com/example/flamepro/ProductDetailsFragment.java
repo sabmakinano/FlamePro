@@ -10,6 +10,7 @@ import android.view.animation.OvershootInterpolator;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.viewpager2.widget.ViewPager2;
@@ -83,27 +84,55 @@ public class ProductDetailsFragment extends Fragment {
         ImageView ivBack = view.findViewById(R.id.ivBack);
         MaterialButton btnBuyNow = view.findViewById(R.id.btnBuyNow);
         MaterialButton btnAddToCart = view.findViewById(R.id.btnAddToCart);
+        MaterialButton btnBookRefill = view.findViewById(R.id.btnBookRefill);
 
-        tvTitle.setText(product.getName());
-        tvCategory.setText(product.getCategoryTag());
+        if (tvTitle != null) tvTitle.setText(product.getName());
+        if (tvCategory != null) tvCategory.setText(product.getCategoryTag());
         
-        tvCurrentPrice.setText(product.getPrice());
-        tvOriginalPrice.setText(product.getOriginalPrice());
-        tvOriginalPrice.setPaintFlags(tvOriginalPrice.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
-        tvDiscount.setText(product.getDiscount());
-        tvWeight.setText(product.getWeight());
-        tvType.setText(product.getType());
-        tvCoverage.setText(product.getCoverage());
-
-        tvRatingScore.setText(String.valueOf(product.getRating()));
-        tvReviewCount.setText("(" + product.getReviews() + " Reviews)");
-        
-        if (product.isInStock()) {
-            tvStockStatus.setText(R.string.in_stock);
-        } else {
-            tvStockStatus.setText(R.string.out_of_stock);
+        if (tvCurrentPrice != null) tvCurrentPrice.setText(product.getPrice());
+        if (tvOriginalPrice != null) {
+            tvOriginalPrice.setVisibility(View.GONE);
         }
-        tvStockStatus.setVisibility(View.VISIBLE);
+        if (tvDiscount != null) {
+            tvDiscount.setText(product.getDiscount());
+            tvDiscount.setVisibility(View.GONE);
+        }
+
+        if (btnBookRefill != null) {
+            String cat = product.getCategoryTag() != null ? product.getCategoryTag().toLowerCase() : "";
+            String name = product.getName() != null ? product.getName().toLowerCase() : "";
+            if (cat.contains("extinguisher") || name.contains("extinguisher")) {
+                btnBookRefill.setVisibility(View.VISIBLE);
+                btnBookRefill.setOnClickListener(v -> {
+                    ServiceRequestSheet.newInstance("Refilling").show(getParentFragmentManager(), "refill_service");
+                });
+            } else {
+                btnBookRefill.setVisibility(View.GONE);
+            }
+        }
+        if (tvWeight != null) tvWeight.setText(product.getWeight());
+        if (tvType != null) tvType.setText(product.getType());
+        if (tvCoverage != null) tvCoverage.setText(product.getCoverage());
+
+        if (tvRatingScore != null) {
+            tvRatingScore.setText(String.valueOf(product.getRating()));
+        }
+        if (tvReviewCount != null) {
+            tvReviewCount.setText("(" + product.getReviews() + " Reviews)");
+        }
+        
+        boolean isAvailable = product.isInStock() && product.getStockQuantity() > 0;
+
+        if (tvStockStatus != null) {
+            if (isAvailable) {
+                tvStockStatus.setText(R.string.in_stock);
+                tvStockStatus.setTextColor(getResources().getColor(R.color.brand_red));
+            } else {
+                tvStockStatus.setText(R.string.out_of_stock);
+                tvStockStatus.setTextColor(getResources().getColor(R.color.text_gray));
+            }
+            tvStockStatus.setVisibility(View.VISIBLE);
+        }
 
         setupFeaturesList(view);
         setupVariants(view, tvCurrentPrice, tvWeight);
@@ -114,14 +143,30 @@ public class ProductDetailsFragment extends Fragment {
             }
         });
 
-        btnAddToCart.setOnClickListener(v -> {
-            CartManager.getInstance().addProduct(product, quantity);
-            performCartAnimation(view.findViewById(R.id.flCartAnim));
-        });
+        if (!isAvailable) {
+            btnAddToCart.setEnabled(false);
+            btnAddToCart.setAlpha(0.35f);
+            btnBuyNow.setEnabled(false);
+            btnBuyNow.setAlpha(0.35f);
+            btnBuyNow.setText("Out of Stock");
+            btnAddToCart.setText("Unavailable");
+        } else {
+            btnAddToCart.setEnabled(true);
+            btnAddToCart.setAlpha(1.0f);
+            btnBuyNow.setEnabled(true);
+            btnBuyNow.setAlpha(1.0f);
+            btnBuyNow.setText(R.string.buy_now);
+            btnAddToCart.setText(R.string.add_to_cart);
 
-        btnBuyNow.setOnClickListener(v -> {
-            CheckoutBottomSheet.newInstance(product).show(getParentFragmentManager(), "checkout");
-        });
+            btnAddToCart.setOnClickListener(v -> {
+                CartManager.getInstance().addProduct(product, quantity);
+                performCartAnimation(view.findViewById(R.id.flCartAnim));
+            });
+
+            btnBuyNow.setOnClickListener(v -> {
+                CheckoutBottomSheet.newInstance(product).show(getParentFragmentManager(), "checkout");
+            });
+        }
     }
 
     private void setupVariants(View view, TextView tvCurrentPrice, TextView tvWeight) {
@@ -237,6 +282,11 @@ public class ProductDetailsFragment extends Fragment {
         });
 
         ivPlus.setOnClickListener(v -> {
+            int maxStock = product.getStockQuantity();
+            if (maxStock > 0 && quantity >= maxStock) {
+                Toast.makeText(getContext(), "Only " + maxStock + " item(s) available in stock", Toast.LENGTH_SHORT).show();
+                return;
+            }
             quantity++;
             tvQuantity.setText(String.valueOf(quantity));
         });
@@ -246,7 +296,7 @@ public class ProductDetailsFragment extends Fragment {
         ViewPager2 vpCarousel = view.findViewById(R.id.vpProductImage);
         TabLayout tlDots = view.findViewById(R.id.tlDots);
 
-        ImageCarouselAdapter adapter = new ImageCarouselAdapter(product.getCarouselImages(), product.getImageUrl());
+        ImageCarouselAdapter adapter = new ImageCarouselAdapter(product.getCarouselImages(), product.getImageUrl(), product.getGalleryImages());
         vpCarousel.setAdapter(adapter);
 
         new TabLayoutMediator(tlDots, vpCarousel, (tab, position) -> {}).attach();

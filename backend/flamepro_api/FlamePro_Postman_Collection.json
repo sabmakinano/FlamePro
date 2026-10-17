@@ -1,0 +1,160 @@
+{
+  "info": {
+    "_postman_id": "c1f7b8a2-8b43-4b6e-a3b1-9f20e4e69b50",
+    "name": "FlamePro REST API Collection",
+    "description": "Postman Collection for FlamePro Fire Safety Equipment & Services Management System supporting use cases FP-01, FP-02, and FP-03.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth - Login",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email_or_username\": \"glenmarkcasayas@gmail.com\",\n  \"password\": \"123456\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/auth/login.php",
+          "host": ["{{base_url}}"],
+          "path": ["api", "auth", "login.php"]
+        }
+      }
+    },
+    {
+      "name": "Products - Get Products (FP-01)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/products/get_products.php?category=all",
+          "host": ["{{base_url}}"],
+          "path": ["api", "products", "get_products.php"],
+          "query": [
+            { "key": "category", "value": "all" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Orders - Create Order (FP-01)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"user_id\": 1,\n  \"shipping_address\": \"Brgy. Lorega, Cebu City\",\n  \"delivery_zone\": \"Zone 1\",\n  \"delivery_fee\": 100.00,\n  \"payment_method\": \"Cash on Delivery\",\n  \"items\": [\n    {\n      \"product_id\": 1,\n      \"quantity\": 2,\n      \"unit_price\": 120.00\n    }\n  ]\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/orders/create_order.php",
+          "host": ["{{base_url}}"],
+          "path": ["api", "orders", "create_order.php"]
+        }
+      }
+    },
+    {
+      "name": "Orders - Get User Orders (FP-01)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/orders/get_orders.php?user_id=1",
+          "host": ["{{base_url}}"],
+          "path": ["api", "orders", "get_orders.php"],
+          "query": [
+            { "key": "user_id", "value": "1" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Delivery - Get Assigned Deliveries (FP-02)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/delivery/get_assigned_orders.php?rider_id=1",
+          "host": ["{{base_url}}"],
+          "path": ["api", "delivery", "get_assigned_orders.php"],
+          "query": [
+            { "key": "rider_id", "value": "1" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Delivery - Update Order Status & Remittance (FP-02)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"order_id\": 1,\n  \"status\": \"Delivered\",\n  \"remittance_status\": \"Remitted\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/delivery/update_status.php",
+          "host": ["{{base_url}}"],
+          "path": ["api", "delivery", "update_status.php"]
+        }
+      }
+    },
+    {
+      "name": "Services - Create Service Request (FP-03)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"user_id\": 1,\n  \"service_type\": \"Extinguisher Refilling\",\n  \"scheduled_date\": \"2026-10-15\",\n  \"notes\": \"Annual inspection and refill of 5 units\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/services/create_service_request.php",
+          "host": ["{{base_url}}"],
+          "path": ["api", "services", "create_service_request.php"]
+        }
+      }
+    },
+    {
+      "name": "Technician - Get Assigned Services (FP-03)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/technician/get_assigned_services.php?tech_id=1",
+          "host": ["{{base_url}}"],
+          "path": ["api", "technician", "get_assigned_services.php"],
+          "query": [
+            { "key": "tech_id", "value": "1" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Technician - Complete Service (FP-03)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"request_id\": 1,\n  \"status\": \"Completed\",\n  \"notes\": \"Re-pressurized and certified\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/technician/update_status.php",
+          "host": ["{{base_url}}"],
+          "path": ["api", "technician", "update_status.php"]
+        }
+      }
+    }
+  ]
+}

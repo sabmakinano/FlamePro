@@ -144,7 +144,8 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:gravity="center_vertical"
-                android:orientation="horizontal">
+                android:orientation="horizontal"
+                android:visibility="gone">
 
                 <ImageView
                     android:layout_width="16dp"
@@ -229,7 +230,8 @@
                     android:text="28% OFF"
                     android:textColor="@color/white"
                     android:textSize="12sp"
-                    android:textStyle="bold" />
+                    android:textStyle="bold"
+                    android:visibility="gone" />
 
                 <View
                     android:layout_width="0dp"
@@ -270,7 +272,8 @@
                 android:layout_marginTop="16dp"
                 android:background="@drawable/light_gray_rect"
                 android:gravity="center_vertical"
-                android:padding="12dp">
+                android:padding="12dp"
+                android:visibility="gone">
 
                 <ImageView
                     android:layout_width="20dp"
@@ -577,6 +580,26 @@
             android:textStyle="bold"
             app:cornerRadius="12dp"
             app:icon="@drawable/ic_lightning"
+            app:iconGravity="textStart"
+            app:iconPadding="12dp"
+            app:iconTint="@color/brand_red"
+            app:strokeColor="@color/brand_red"
+            app:strokeWidth="1.5dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnBookRefill"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginTop="8dp"
+            android:text="Book Refilling Service"
+            android:textAllCaps="false"
+            android:textColor="@color/brand_red"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:visibility="gone"
+            app:cornerRadius="12dp"
+            app:icon="@drawable/ic_fire_type"
             app:iconGravity="textStart"
             app:iconPadding="12dp"
             app:iconTint="@color/brand_red"

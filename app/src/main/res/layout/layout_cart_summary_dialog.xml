@@ -184,6 +184,31 @@
                             android:textStyle="bold" />
                     </LinearLayout>
 
+                    <!-- Delivery Area Row -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingBottom="8dp">
+
+                        <TextView
+                            android:id="@+id/tvDeliveryLabel"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Delivery Area"
+                            android:textColor="@color/text_gray"
+                            android:textSize="14sp" />
+
+                        <Spinner
+                            android:id="@+id/spnDeliveryArea"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:layout_weight="1"
+                            android:textAlignment="viewEnd" />
+                    </LinearLayout>
+
                     <!-- Delivery Fee Row -->
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -203,7 +228,7 @@
                             android:id="@+id/tvSummaryDelivery"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="₱ 9.99"
+                            android:text="₱ 100.00"
                             android:textColor="@color/black"
                             android:textSize="14sp"
                             android:textStyle="bold" />
